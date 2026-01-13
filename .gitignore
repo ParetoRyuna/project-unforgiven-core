@@ -1,0 +1,33 @@
+Dependency directories
+
+node_modules/
+
+Build outputs
+
+artifacts/
+cache/
+dist/
+out/
+build/
+
+Environment variables
+
+.env
+.env.local
+
+IDE settings
+
+.vscode/
+.idea/
+
+System files
+
+.DS_Store
+Thumbs.db
+
+Hardhat
+
+coverage/
+coverage.json
+typechain/
+typechain-types/
