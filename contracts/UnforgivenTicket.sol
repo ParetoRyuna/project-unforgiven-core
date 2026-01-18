@@ -7,106 +7,146 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title Project UNFORGIVEN - Identity-Weighted Ticketing Protocol
- * @author Jiani Zhao (Consensus 2026 Hackathon)
+ * @author Jiani Zhao
  * @notice Implements C_access = P0 + D(alpha, t)
- * @dev Replaces standard VRGDA with a Refundable Deposit Mechanism.
+ * @dev Replaces standard dynamic pricing with a Refundable Deposit Mechanism.
  */
 contract UnforgivenTicket is ERC721, Ownable, ReentrancyGuard {
 
     // --- Events ---
-    // Log compressed verification data for off-chain audit (Gas Optimization)
-    event AuditLog(bytes32 indexed packedData); 
     event TicketIssued(address indexed buyer, uint256 tokenId, uint256 depositLocked);
     event DepositRefunded(address indexed buyer, uint256 amount);
+    // Critical event for frontend to display "Scalper Got Rekt"
+    event FundsConfiscated(uint256 tokenId, uint256 amount); 
 
     // --- Protocol Parameters ---
-    uint256 public constant FACE_VALUE = 0.1 ether; // P0: Fixed Price (Fairness)
+    uint256 public constant FACE_VALUE = 0.1 ether; 
     uint256 public constant MIN_DEPOSIT = 0.01 ether; 
     
-    // Configurable constants for the "Bankruptcy Zone" curve
-    uint256 public congestionMultiplier = 50; 
+    // Confiscated Vault (Protocol Revenue from Scalper Tax)
+    uint256 public confiscatedVault;
 
     // --- State ---
     uint256 public totalSupply = 0;
     uint256 public maxSupply = 5000;
 
-    // Mapping to track locked deposits: TokenID -> Deposit Amount
-    mapping(uint256 => uint256) public lockedDeposits;
+    struct TicketInfo {
+        uint256 lockedDeposit;
+        bool isMalicious;      
+        bool isRefunded;
+    }
+
+    mapping(uint256 => TicketInfo) public tickets;
 
     constructor() ERC721("UNFORGIVEN Protocol", "UNFORGIVEN") Ownable(msg.sender) {}
 
     /**
-     * @notice Calculate required Deposit (D) based on Risk Score (alpha) and Congestion.
-     * @param riskScore 0-100 (100 = True Fan, 0 = Bot). Passed from off-chain ZK-prover.
-     * @param demandFactor Current queue length (provided by oracle/backend).
+     * @notice J-Curve Logic: Deposit = Min + (RiskFactor * Demand^2)
+     * @dev Calculates the required refundable deposit based on identity risk.
      */
-    function calculateDeposit(uint256 riskScore, uint256 demandFactor) public view returns (uint256) {
-        // Core Logic: C_access = P0 + D(alpha)
-        
-        // Invert score: Lower score = Higher risk
-        uint256 riskFactor = 100 - riskScore; 
+    function calculateDeposit(uint256 riskScore, uint256 demandFactor) public pure returns (uint256) {
+        // 1. Risk Inversion: Lower score (0) -> Higher risk factor (10)
+        // riskScore 0 (Bot) -> riskFactor 10
+        // riskScore 100 (Fan) -> riskFactor 0
+        uint256 riskFactor = (100 - riskScore) / 10; 
 
-        // J-Curve Logic: 
-        // If risk is high (>50) and demand is high, Deposit scales exponentially.
-        // Simple linear implementation for hackathon MVP:
-        uint256 dynamicDeposit = (riskFactor * demandFactor * congestionMultiplier) / 100;
+        // 2. J-Curve: Exponential penalty based on Demand^2
+        // True Fans (riskFactor=0) pay 0 extra. Bots face exponential costs.
+        uint256 exponentialPenalty = riskFactor * (demandFactor ** 2);
         
-        // True Fans (Risk ~ 0) pay minimal deposit
+        // Scaling factor (0.0001 ether per unit)
+        uint256 dynamicDeposit = exponentialPenalty * 0.0001 ether;
+
         return MIN_DEPOSIT + dynamicDeposit;
     }
 
     /**
-     * @notice Buy Ticket with Identity-Weighted Deposit.
-     * @param riskScore Verified off-chain score (0-100).
-     * @param packedAuditData 256-bit word containing timestamp + rule version + hash.
-     * @param signature Oracle signature verifying the score (Mocked for Demo).
+     * @notice Purchase ticket with Identity-Weighted Deposit
      */
     function buyTicket(
         uint256 riskScore, 
-        bytes32 packedAuditData, 
-        bytes calldata signature
+        bytes calldata signature // Mock signature for hackathon demo
     ) public payable nonReentrant {
         require(totalSupply < maxSupply, "Sold Out");
         
-        // 1. Calculate Required Cost: P0 + D
-        // In a real implementation, 'demandFactor' comes from an oracle. 
-        // For MVP, we use block.number % 100 as a pseudo-random congestion sim.
-        uint256 demandFactor = block.number % 50; 
+        // Mock Demand: varies from 1 to 50 based on block number to simulate congestion
+        uint256 demandFactor = (block.number % 50) + 1; 
+        
         uint256 requiredDeposit = calculateDeposit(riskScore, demandFactor);
         uint256 totalCost = FACE_VALUE + requiredDeposit;
 
-        require(msg.value >= totalCost, "Insufficient funds for Deposit + Face Value");
+        require(msg.value >= totalCost, "Insufficient funds: The J-Curve rejected you.");
 
-        // 2. Audit Logging (Bitwise Packing)
-        // Emits only 32 bytes to save gas on Solana/Aptos/EVM L2s
-        emit AuditLog(packedAuditData);
-
-        // 3. Mint Logic
         totalSupply++;
         uint256 tokenId = totalSupply;
         _safeMint(msg.sender, tokenId);
 
-        // 4. Lock Deposit
-        lockedDeposits[tokenId] = requiredDeposit;
+        tickets[tokenId] = TicketInfo({
+            lockedDeposit: requiredDeposit,
+            isMalicious: false,
+            isRefunded: false
+        });
         
         emit TicketIssued(msg.sender, tokenId, requiredDeposit);
     }
 
     /**
-     * @notice Return the deposit to the user after the event (or verification check).
-     * @dev Only callable by admin or after event timestamp.
+     * @notice Admin function to flag bot activity based on off-chain analysis.
+     */
+    function flagMaliciousActivity(uint256 tokenId, bool status) external onlyOwner {
+        tickets[tokenId].isMalicious = status;
+    }
+
+    /**
+     * @notice Refund logic with "Scalper Tax" implementation.
      */
     function refundDeposit(uint256 tokenId) external nonReentrant {
         require(ownerOf(tokenId) == msg.sender, "Not token owner");
-        uint256 deposit = lockedDeposits[tokenId];
-        require(deposit > 0, "No deposit to refund");
+        TicketInfo storage info = tickets[tokenId];
+        
+        require(!info.isRefunded, "Already refunded");
+        require(info.lockedDeposit > 0, "No deposit");
 
-        lockedDeposits[tokenId] = 0;
+        // --- Core Logic: Confiscation ---
+        if (info.isMalicious) {
+            // 1. Move funds to the protocol vault
+            confiscatedVault += info.lockedDeposit;
+            
+            // 2. Record the confiscated amount
+            uint256 confiscatedAmount = info.lockedDeposit;
+            
+            // 3. Clear state to prevent re-entrancy or double spend
+            info.lockedDeposit = 0; 
+            info.isRefunded = true; // Mark as processed
+            
+            // 4. Emit event for transparency
+            emit FundsConfiscated(tokenId, confiscatedAmount);
+            
+            // 5. [CRITICAL] Return successfully, do NOT revert.
+            // This ensures the transaction consumes gas and the state change persists.
+            return;
+        }
 
-        // Refund D, keep P0
-        (bool success, ) = payable(msg.sender).call{value: deposit}("");
+        // --- Normal Refund Logic for Real Fans ---
+        uint256 amount = info.lockedDeposit;
+        info.lockedDeposit = 0;
+        info.isRefunded = true;
+
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
         require(success, "Transfer failed");
 
-        emit DepositRefunded(msg.sender, deposit);
+        emit DepositRefunded(msg.sender, amount);
+    }
+
+    /**
+     * @notice Withdraw the revenue generated from confiscated scalper deposits.
+     */
+    function withdrawConfiscatedFunds() external onlyOwner {
+        uint256 amount = confiscatedVault;
+        require(amount > 0, "No funds to withdraw");
+        
+        confiscatedVault = 0;
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        require(success, "Withdraw failed");
     }
 }
