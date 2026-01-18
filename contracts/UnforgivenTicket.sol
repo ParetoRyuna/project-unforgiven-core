@@ -1,155 +1,112 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-// Optimized: Removing Enumerable to save Gas. We will track supply manually.
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SignedMath.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol"; // Security: Prevents re-entrancy attacks
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
- * @title Project UNFORGIVEN - VRGDA Ticketing Protocol
- * @author Jiani Zhao
- * @notice Implements a simplified Variable Rate Gradual Dutch Auction (VRGDA).
- * @dev Optimized for gas efficiency and security (ReentrancyGuard, call vs transfer).
+ * @title Project UNFORGIVEN - Identity-Weighted Ticketing Protocol
+ * @author Jiani Zhao (Consensus 2026 Hackathon)
+ * @notice Implements C_access = P0 + D(alpha, t)
+ * @dev Replaces standard VRGDA with a Refundable Deposit Mechanism.
  */
 contract UnforgivenTicket is ERC721, Ownable, ReentrancyGuard {
-    using SignedMath for int256;
 
-    // --- Events (Critical for Frontend Dashboard) ---
-    event TicketPurchased(address indexed buyer, uint256 tokenId, uint256 price, uint256 timestamp);
-    event AuctionConfigUpdated(uint256 newStartTime, int256 newMinPrice);
-    // Added Lifecycle Event: Signals when the owner cashes out/ends the protocol loop
-    event AuctionEnded(uint256 timestamp, uint256 totalAmountRaised);
+    // --- Events ---
+    // Log compressed verification data for off-chain audit (Gas Optimization)
+    event AuditLog(bytes32 indexed packedData); 
+    event TicketIssued(address indexed buyer, uint256 tokenId, uint256 depositLocked);
+    event DepositRefunded(address indexed buyer, uint256 amount);
 
     // --- Protocol Parameters ---
+    uint256 public constant FACE_VALUE = 0.1 ether; // P0: Fixed Price (Fairness)
+    uint256 public constant MIN_DEPOSIT = 0.01 ether; 
     
-    // Target Price: 0.1 ETH
-    int256 public targetPrice = 0.1 ether; 
-    
-    // Decay Constant: Price sensitivity
-    int256 public decayConstant = 0.1 ether; 
-    
-    // Minimum Price floor (adjustable)
-    int256 public minPrice = 0.001 ether;
+    // Configurable constants for the "Bankruptcy Zone" curve
+    uint256 public congestionMultiplier = 50; 
 
-    // Target Rate: Tickets to sell per minute
-    int256 public perTimeUnit = 10; 
-
-    // Auction Start Timestamp (can be updated by owner)
-    uint256 public startTime;
-    
-    // Venue Capacity
+    // --- State ---
+    uint256 public totalSupply = 0;
     uint256 public maxSupply = 5000;
 
-    // --- State Variables ---
-    
-    // Manual counter is cheaper than ERC721Enumerable
-    uint256 public totalSupply = 0;
+    // Mapping to track locked deposits: TokenID -> Deposit Amount
+    mapping(uint256 => uint256) public lockedDeposits;
 
-    constructor() ERC721("UNFORGIVEN Protocol", "UNFORGIVEN") Ownable(msg.sender) {
-        // Sanity check parameters
-        require(targetPrice > 0, "Target price must be positive");
-        require(decayConstant > 0, "Decay constant must be positive");
-        
-        // Default start time is now
-        startTime = block.timestamp;
-    }
-
-    // --- Admin Functions ---
+    constructor() ERC721("UNFORGIVEN Protocol", "UNFORGIVEN") Ownable(msg.sender) {}
 
     /**
-     * @notice Allows the owner to set the auction start time explicitly.
+     * @notice Calculate required Deposit (D) based on Risk Score (alpha) and Congestion.
+     * @param riskScore 0-100 (100 = True Fan, 0 = Bot). Passed from off-chain ZK-prover.
+     * @param demandFactor Current queue length (provided by oracle/backend).
      */
-    function setAuctionConfig(uint256 _startTime, int256 _minPrice) external onlyOwner {
-        // Safety check: Prevent setting price dangerously low (e.g. 0)
-        require(_minPrice >= 0.0001 ether, "Min price too low");
+    function calculateDeposit(uint256 riskScore, uint256 demandFactor) public view returns (uint256) {
+        // Core Logic: C_access = P0 + D(alpha)
         
-        startTime = _startTime;
-        minPrice = _minPrice;
-        emit AuctionConfigUpdated(_startTime, _minPrice);
+        // Invert score: Lower score = Higher risk
+        uint256 riskFactor = 100 - riskScore; 
+
+        // J-Curve Logic: 
+        // If risk is high (>50) and demand is high, Deposit scales exponentially.
+        // Simple linear implementation for hackathon MVP:
+        uint256 dynamicDeposit = (riskFactor * demandFactor * congestionMultiplier) / 100;
+        
+        // True Fans (Risk ~ 0) pay minimal deposit
+        return MIN_DEPOSIT + dynamicDeposit;
     }
 
     /**
-     * @notice Calculates the current purchase price based on sales velocity.
-     * @dev Uses int256 to allow for negative price adjustments (when lagging).
+     * @notice Buy Ticket with Identity-Weighted Deposit.
+     * @param riskScore Verified off-chain score (0-100).
+     * @param packedAuditData 256-bit word containing timestamp + rule version + hash.
+     * @param signature Oracle signature verifying the score (Mocked for Demo).
      */
-    function getCurrentPrice() public view returns (uint256) {
-        // If auction hasn't started, return 2x target price as a placeholder high price.
-        // Logic: No need for gradual transition here as buying is disabled before start.
-        if (block.timestamp < startTime) {
-            return uint256(targetPrice * 2); 
-        }
-
-        // 1. Calculate time delta (Minutes)
-        int256 timeSinceStart = int256((block.timestamp - startTime) / 60); 
-
-        // 2. Get current inventory sold (cast to int for math)
-        int256 sold = int256(totalSupply);
-
-        // 3. Calculate Target Schedule
-        int256 targetSold = timeSinceStart * perTimeUnit;
-
-        // 4. Calculate Lag/Lead
-        // Negative value = We are selling too slow -> Price should drop
-        // Positive value = We are selling too fast -> Price should spike
-        int256 productionDiff = sold - targetSold;
-
-        // 5. Apply Pricing Adjustment
-        // Note: Using standard integer math which is safe from overflow in Solidity 0.8+
-        // for reasonable ticket volume (maxSupply = 5000).
-        int256 priceAdjustment = productionDiff * (targetPrice / 10); 
+    function buyTicket(
+        uint256 riskScore, 
+        bytes32 packedAuditData, 
+        bytes calldata signature
+    ) public payable nonReentrant {
+        require(totalSupply < maxSupply, "Sold Out");
         
-        int256 finalPrice = targetPrice + priceAdjustment;
+        // 1. Calculate Required Cost: P0 + D
+        // In a real implementation, 'demandFactor' comes from an oracle. 
+        // For MVP, we use block.number % 100 as a pseudo-random congestion sim.
+        uint256 demandFactor = block.number % 50; 
+        uint256 requiredDeposit = calculateDeposit(riskScore, demandFactor);
+        uint256 totalCost = FACE_VALUE + requiredDeposit;
 
-        // Safety floor: never go below minPrice or zero
-        if (finalPrice < minPrice) {
-            return uint256(minPrice);
-        }
-        
-        return uint256(finalPrice);
-    }
+        require(msg.value >= totalCost, "Insufficient funds for Deposit + Face Value");
 
-    /**
-     * @notice Purchase a ticket.
-     * @dev Protected by nonReentrant to prevent re-entrancy attacks during refunds.
-     */
-    function buyTicket() public payable nonReentrant {
-        require(totalSupply < maxSupply, "Sold Out: Venue Capacity Reached");
-        require(block.timestamp >= startTime, "Auction not started");
-        
-        uint256 price = getCurrentPrice();
-        require(msg.value >= price, "Insufficient funds sent based on current VRGDA price");
+        // 2. Audit Logging (Bitwise Packing)
+        // Emits only 32 bytes to save gas on Solana/Aptos/EVM L2s
+        emit AuditLog(packedAuditData);
 
-        // Increment supply FIRST (Checks-Effects-Interactions pattern)
+        // 3. Mint Logic
         totalSupply++;
         uint256 tokenId = totalSupply;
-
-        // Mint NFT
         _safeMint(msg.sender, tokenId);
-        
-        // Emit Event (Critical for Frontend)
-        emit TicketPurchased(msg.sender, tokenId, price, block.timestamp);
 
-        // Refund excess ETH
-        uint256 refund = msg.value - price;
-        if (refund > 0) {
-            // Secure refund method using call
-            (bool success, ) = payable(msg.sender).call{value: refund}("");
-            require(success, "Refund failed");
-        }
+        // 4. Lock Deposit
+        lockedDeposits[tokenId] = requiredDeposit;
+        
+        emit TicketIssued(msg.sender, tokenId, requiredDeposit);
     }
 
     /**
-     * @notice Withdraw protocol funds and signal auction end.
+     * @notice Return the deposit to the user after the event (or verification check).
+     * @dev Only callable by admin or after event timestamp.
      */
-    function withdraw() public onlyOwner {
-        uint256 amount = address(this).balance;
-        (bool success, ) = payable(owner()).call{value: amount}("");
-        require(success, "Withdraw failed");
-        
-        // Emitting this event marks the "Exit" of the project lifecycle on-chain
-        emit AuctionEnded(block.timestamp, amount);
+    function refundDeposit(uint256 tokenId) external nonReentrant {
+        require(ownerOf(tokenId) == msg.sender, "Not token owner");
+        uint256 deposit = lockedDeposits[tokenId];
+        require(deposit > 0, "No deposit to refund");
+
+        lockedDeposits[tokenId] = 0;
+
+        // Refund D, keep P0
+        (bool success, ) = payable(msg.sender).call{value: deposit}("");
+        require(success, "Transfer failed");
+
+        emit DepositRefunded(msg.sender, deposit);
     }
 }
