@@ -49,7 +49,7 @@ We are open-sourcing the core protocol logic for the **Consensus 2026 Hackathon*
 - [ ] **Phase 1: Core Contract (In Progress)** 🟡
     - Implementing the `AtomicSwap` and `DepositLogic` in Move/Solidity.
     - Integrating Bitwise Packing for gas optimization.
-- [ ] **Phase 2: Agent-Based Simulation (In Progress)** 🟡
+- [ ] **Phase 2: Agent-Based Simulation (Planned)** 
     - Python simulation to demonstrate Scalper ROI collapse under high congestion.
     - Stress testing with 1,000+ concurrent bot agents.
 - [ ] **Phase 3: "Shopify" Presale Gate (Planned)**
