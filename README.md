@@ -43,18 +43,18 @@ To ensure the "Audit Log" is affordable on-chain, we verify rules without storin
 ## 4. Hackathon Implementation Plan
 We are open-sourcing the core protocol logic for the **Consensus 2026 Hackathon**.
 
-- [x] **Phase 0: Mechanism Design**
-    - Defined $C_{access}$ pricing curve and bankruptcy zone parameters.
-    - Completed Whitepaper v5.0.
-- [ ] **Phase 1: Core Contract (In Progress)** 🟡
-    - Implementing the `AtomicSwap` and `DepositLogic` in Move/Solidity.
-    - Integrating Bitwise Packing for gas optimization.
-- [ ] **Phase 2: Agent-Based Simulation (Planned)** 
-    - Python simulation to demonstrate Scalper ROI collapse under high congestion.
-    - Stress testing with 1,000+ concurrent bot agents.
+- [x] **Phase 0: Mathematical Proof (Completed)**
+    - Validated the J-Curve Logic and Bankruptcy Zone parameters.
+    - Completed Whitepaper v5.0 mechanism design.
+- [ ] **Phase 1: Smart Contract Logic (In Progress)** 🟡
+    - Fully implement `UnforgivenTicket.sol` with J-Curve and Scalper Tax.
+    - **Goal**: Integrate Time Decay ($t$) factor and ZK-proof verification hooks during the hackathon.
+- [ ] **Phase 2: Frontend Simulation**
+    - Live visualization of the "Bankruptcy Zone" attacking bot wallets.
+    - Interactive dashboard for organizers to view the "Confiscated Vault" growing.
 - [ ] **Phase 3: "Shopify" Presale Gate (Planned)**
-    - A plugin to allow artists to gate inventory on their own O&O channels using the protocol.
-
+    - A plugin to allow artists to gate inventory on their own O&O channels.
+      
 ---
 
 ## 5. Intellectual Property
