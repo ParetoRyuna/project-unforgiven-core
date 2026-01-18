@@ -1,61 +1,69 @@
 # Project UNFORGIVEN // Protocol
 
-**A high-frequency Dutch Auction ticketing protocol powered by Variable Rate Gradual Dutch Auctions (VRGDA).**
-
-> "We don't block scalpers; we tax them into oblivion."
+> **"We don't block bots; we lock their liquidity into a 'Bankruptcy Zone'."**
 
 ## 1. Abstract
+Current anti-scalping measures (KYC, CAPTCHA, Waiting Rooms) attempt to solve a mechanism design problem with identity verification. This is inefficient and prone to privacy backlash.
 
-Current anti-scalping measures (KYC, CAPTCHA) attempt to solve a mechanism design problem with identity verification. This is inefficient. Project UNFORGIVEN proposes a market-based solution: using a J-curve pricing model that mathematically aligns the cost of acquisition with the velocity of sales. By turning inventory depletion into a pricing signal, we destroy the arbitrage spread that scalpers rely on.
+**Project UNFORGIVEN** proposes a market-based solution: **Identity-Weighted Access Pricing**. Instead of dynamic pricing which hurts fans, we utilize a dynamic **refundable pre-authorization** model. By turning capital lockup into a friction signal, we mathematically destroy the arbitrage ROI for mass bot attacks while keeping face-value prices fixed for real fans.
 
-## 2. Core Mechanism: The "Toll Road" Logic
+---
 
-We implement a variation of the algorithm pioneered by Paradigm. The core logic uses a **J-Curve** to penalize high-frequency bot attacks with exponential capital requirements.
+## 2. Core Mechanism: The $C_{access}$ Formula
+Unlike traditional VRGDA which increases the *final price*, UNFORGIVEN utilizes a J-Curve to scale the **refundable pre-authorization amount ($D$)** required to access inventory.
 
-```mermaid
-graph LR
-    A[User Request] --> B{Trust Score}
-    B -- High Trust --> C[Fast Lane]
-    C --> D[Pay Face Value Only]
-    B -- Low Trust --> E[Toll Booth]
-    E --> F{Buying Speed}
-    F -- Normal --> G[Standard Deposit]
-    F -- Attack --> H[Exponential Deposit J Curve]
-    H --> I[Financial Insolvency]
-```
+$$C_{access} = P_0 + D(\alpha, t, \kappa)$$
 
-### The Math
+### Variable Definitions:
+* **$P_0$ (Fixed Face Value)**: The ticket price remains constant. We do not exploit fans with dynamic pricing.
+* **$D$ (Refundable Capital Barrier)**: A temporary pre-authorization hold.
+    * For a **True Fan** ($\alpha \to 1$), $D \approx 0$.
+    * For a **Suspected Bot** ($\alpha \to 0$), $D$ scales exponentially.
+* **$\alpha$ (Identity-Risk Factor)**: Derived from off-chain signals (e.g., Spotify listening history, on-chain reputation) via zero-knowledge proofs.
+* **$t, \kappa$**: Time decay and network congestion constants.
 
-We utilize a continuous token issuance model where price $P(t)$ is a function of time $t$ and sales velocity.
+**The Logic**: When demand spikes, the "Cost of Access" ($D$) rises sharply for low-reputation accounts. This forces scalpers into a **"Bankruptcy Zone"** where the capital required to sweep inventory exceeds the potential resale profit, causing the attack to collapse.
 
-$$
-P(t) = P_0 (1 - k)^{t - \frac{n}{r}}
-$$
+---
 
-Where:
-- $P(t)$: Price at time $t$
-- $P_0$: Initial Target Price
-- $k$: Decay Constant (Scalper Tax / Price Sensitivity)
-- $n$: Number of tickets sold
-- $r$: Target sales rate (tickets/minute)
+## 3. Technical Implementation
+This protocol is architected for high-throughput chains like **Solana** or **Aptos** to handle bursty ticketing traffic.
 
-## 3. Project Structure
+### A. Hybrid Trust Architecture
+* **Off-chain Engine**: Handles high-frequency scoring and queue management in milliseconds.
+* **On-chain Settlement**: Executes the atomic swap of Ticket-for-Capital.
 
-- `/contracts`: Core Solidity logic for the ERC721 Dutch Auction.
-- `/whitepaper`: Theoretical basis and game theory simulations (PDF).
-- `/simulation`: (Coming Soon) Python agent-based modeling for stress testing.
+### B. Gas Optimization: Bitwise Compression
+To ensure the "Audit Log" is affordable on-chain, we verify rules without storing PII.
+* **Bitwise Packing**: We compress multiple verification flags (risk score, timestamp, outcome) into a single **256-bit word**.
+* **Privacy-Preserving**: Only the cryptographic proof of the rule check is stored on-chain, ensuring transparency without doxxing fans.
 
-## 4. Roadmap (Q1 2026)
+---
 
-- [x] **Phase 0:** Mathematical Modeling & Whitepaper.
-- [x] **Phase 1:** Core Contract Development (Solidity).
-- [ ] **Phase 2:** Mainnet Deployment & Gas Optimization.
-- [ ] **Phase 3:** Agent Simulation (1000+ Bot Stress Test).
-- [ ] **Phase 4:** Visual Dashboard (React/Tailwind).
+## 4. Hackathon Implementation Plan
+We are open-sourcing the core protocol logic for the **Consensus 2026 Hackathon**.
 
-## 5. Contact & Grant
+- [x] **Phase 0: Mechanism Design**
+    - Defined $C_{access}$ pricing curve and bankruptcy zone parameters.
+    - Completed Whitepaper v5.0.
+- [ ] **Phase 1: Core Contract (In Progress)** 🟡
+    - Implementing the `AtomicSwap` and `DepositLogic` in Move/Solidity.
+    - Integrating Bitwise Packing for gas optimization.
+- [ ] **Phase 2: Agent-Based Simulation (In Progress)** 🟡
+    - Python simulation to demonstrate Scalper ROI collapse under high congestion.
+    - Stress testing with 1,000+ concurrent bot agents.
+- [ ] **Phase 3: "Shopify" Presale Gate (Planned)**
+    - A plugin to allow artists to gate inventory on their own O&O channels using the protocol.
 
-This project is currently applying for the **1517 Fund Medici Grant** and **Emergent Ventures** to fund the mainnet deployment and simulation costs.
+---
 
-**Lead Researcher:** Jiani Zhao  
-**Location:** Shanghai
+## 5. Intellectual Property
+* **🛡️ Provisional Patent Filed (USPTO)**: The core "Identity-Weighted Access Pricing" and "Hybrid Trust Architecture" are protected IP.
+* **Open Source License**: The code in this repository is released under MIT License for the purpose of the hackathon and developer community review.
+
+---
+
+## 6. Contact & Status
+* **Lead Researcher**: Jiani Zhao
+* **Location**: Shanghai
+* **Status**: Active Development for Consensus 2026
