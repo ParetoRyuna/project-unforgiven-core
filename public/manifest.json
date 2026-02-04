@@ -1,0 +1,9 @@
+{
+  "name": "PROJECT UNFORGIVEN",
+  "short_name": "UNFORGIVEN",
+  "description": "Identity-Weighted VRGDA Protocol",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#CC4400"
+}

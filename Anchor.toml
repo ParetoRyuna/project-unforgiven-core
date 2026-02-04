@@ -1,0 +1,19 @@
+[toolchain]
+anchor_version = "0.29.0"
+
+[features]
+seeds = false
+skip-lint = false
+
+[programs.localnet]
+unforgiven = "7cVF3X3PvNLTNHd9EqvWHsrtHkeJXwRzBcRuoHoTThVT"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "http://host.docker.internal:8899"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

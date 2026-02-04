@@ -1,0 +1,104 @@
+{
+  "address": "7cVF3X3PvNLTNHd9EqvWHsrtHkeJXwRzBcRuoHoTThVT",
+  "metadata": {
+    "name": "unforgiven",
+    "version": "0.1.0",
+    "spec": "0.1.0"
+  },
+  "instructions": [
+    {
+      "name": "initialize",
+      "discriminator": [175, 175, 109, 31, 13, 152, 155, 237],
+      "accounts": [
+        { "name": "authority", "writable": true, "signer": true },
+        { "name": "global_state", "writable": true },
+        { "name": "vault", "writable": true },
+        { "name": "oracle" },
+        { "name": "system_program" }
+      ],
+      "args": [
+        { "name": "target_rate_bps", "type": "u64" },
+        { "name": "start_time", "type": "i64" },
+        { "name": "base_price", "type": "u64" }
+      ]
+    },
+    {
+      "name": "buy_ticket",
+      "discriminator": [134, 222, 145, 40, 37, 161, 198, 134],
+      "accounts": [
+        { "name": "buyer", "writable": true, "signer": true },
+        { "name": "global_state", "writable": true },
+        { "name": "vault", "writable": true },
+        { "name": "ticket", "writable": true },
+        { "name": "instruction_sysvar" },
+        { "name": "system_program" }
+      ],
+      "args": [
+        { "name": "sig_instruction_index", "type": "u16" },
+        { "name": "event_id", "type": "pubkey" },
+        { "name": "tier_level", "type": "u8" },
+        { "name": "expiry", "type": "i64" },
+        { "name": "nonce", "type": "u64" }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "global_state",
+      "discriminator": [107, 234, 251, 110, 47, 168, 178, 154]
+    },
+    {
+      "name": "ticket",
+      "discriminator": [132, 145, 89, 210, 248, 78, 250, 226]
+    },
+    {
+      "name": "vault",
+      "discriminator": [186, 96, 242, 101, 113, 46, 74, 191]
+    }
+  ],
+  "types": [
+    {
+      "name": "global_state",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "authority", "type": "pubkey" },
+          { "name": "oracle_pubkey", "type": { "array": ["u8", 32] } },
+          { "name": "target_rate_bps", "type": "u64" },
+          { "name": "start_time", "type": "i64" },
+          { "name": "base_price", "type": "u64" },
+          { "name": "items_sold", "type": "u64" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "ticket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "buyer", "type": "pubkey" },
+          { "name": "purchase_time", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "vault",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "_reserved", "type": "u8" }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    { "code": 6000, "name": "signatureExpired", "msg": "Signature expired" },
+    { "code": 6001, "name": "invalidEd25519Instruction", "msg": "Invalid Ed25519 instruction" },
+    { "code": 6002, "name": "oracleMismatch", "msg": "Oracle public key mismatch" },
+    { "code": 6003, "name": "messageMismatch", "msg": "Message format mismatch" },
+    { "code": 6004, "name": "buyerMismatch", "msg": "Buyer mismatch in signed message" },
+    { "code": 6005, "name": "mathOverflow", "msg": "Math overflow" },
+    { "code": 6006, "name": "eventMismatch", "msg": "Event ID mismatch" }
+  ]
+}

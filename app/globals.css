@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Burnt & Chrome Palette */
+  --bg-deep: #050505;
+  --primary-burnt: #CC4400;
+  --secondary-chrome: #E5E7EB;
+  --success-teal: #2DD4BF;
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+  background-color: var(--bg-deep);
+  color: var(--secondary-chrome);
+  /* 关键：去除网页回弹效果 */
+  overscroll-behavior-y: none;
+  /* 关键：使用系统字体栈，配合 Tailwind */
+  font-family: 'Eurostile', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Fake Native Hacks (伪原生核心) --- */
+html,
+body {
+  /* 禁止双指缩放 */
+  touch-action: pan-y;
+  /* 禁止长按选中文本 */
+  user-select: none;
+  -webkit-user-select: none;
+  /* 去除点击高亮 */
+  -webkit-tap-highlight-color: transparent;
+  /* 隐藏滚动条但允许滚动 */
+  scrollbar-width: none; /* Firefox */
+}
+
+body::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* 实用类：玻璃拟态 */
+.glass-panel {
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+
+/* 实用类：霓虹辉光 */
+.glow-text {
+  text-shadow: 0 0 10px rgba(204, 68, 0, 0.5);
+}
+
+.glow-border {
+  box-shadow: 0 0 15px rgba(204, 68, 0, 0.2);
+}
+
+/* 钱包弹窗层级：overlay 在底层，内容在上层，避免点击选项时误触 overlay 关闭 */
+.wallet-adapter-modal {
+  z-index: 99998 !important;
+}
+.wallet-adapter-modal-overlay {
+  z-index: 99999 !important;
+}
+.wallet-adapter-modal-wrapper {
+  z-index: 100000 !important;
+}
