@@ -12,7 +12,7 @@ unforgiven = "7cVF3X3PvNLTNHd9EqvWHsrtHkeJXwRzBcRuoHoTThVT"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "http://host.docker.internal:8899"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

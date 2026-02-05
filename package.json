@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:program": "PATH=\"$(pwd)/scripts:$PATH\" anchor build",
     "start": "next start",
     "lint": "next lint"
   },

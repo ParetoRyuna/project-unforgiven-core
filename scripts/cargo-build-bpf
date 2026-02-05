@@ -1,0 +1,6 @@
+#!/bin/sh
+# Wrapper for Anchor 0.29: Cargo passes "build-bpf" as first arg to cargo-build-bpf;
+# the real binary is cargo-build-sbf and it does not accept that subcommand.
+# Drop the first arg if it is "build-bpf", then exec cargo-build-sbf.
+if [ "$1" = "build-bpf" ]; then shift; fi
+exec cargo-build-sbf "$@"
