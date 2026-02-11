@@ -20,6 +20,7 @@
     "framer-motion": "^11.0.0",
     "lucide-react": "^0.471.0",
     "next": "14.2.0",
+    "pino-pretty": "^10.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tailwind-merge": "^2.5.4",
