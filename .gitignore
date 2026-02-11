@@ -21,6 +21,7 @@ out/
 # IDE / Editor
 .idea/
 .vscode/
+.cursor/
 *.swp
 *.swo
 *~
@@ -33,3 +34,6 @@ yarn-error.log*
 
 # Solana
 test-ledger/
+
+# Large vendor assets
+public/partners/CG-GT-Logos.zip

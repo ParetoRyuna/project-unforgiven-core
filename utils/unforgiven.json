@@ -1,0 +1,272 @@
+{
+  "version": "0.1.0",
+  "name": "unforgiven",
+  "instructions": [
+    {
+      "name": "initialize",
+      "docs": [
+        "Initialize the global auction state.",
+        "",
+        "* `target_rate_bps` - Target sales per second in basis points (10000 = 1 item/sec)",
+        "* `start_time` - Unix timestamp when auction starts",
+        "* `base_price` - Base ticket price in lamports"
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "oracle",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Oracle's Ed25519 public key (stored for verification)"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "targetRateBps",
+          "type": "u64"
+        },
+        {
+          "name": "startTime",
+          "type": "i64"
+        },
+        {
+          "name": "basePrice",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "buyTicket",
+      "docs": [
+        "Buy a ticket (Mint Request for Relayer). Spec 3.4.",
+        "* `sig_instruction_index` - Index of the Ed25519 verification instruction in the tx",
+        "* `event_id` - Target event account (must equal global_state key for single-event MVP)",
+        "* `tier_level` - 1=Platinum, 2=Gold, 3=Silver (maps to VRGDA discount)",
+        "* `expiry` - Expiry timestamp signed by Oracle (replay protection)",
+        "* `nonce` - Unique ID signed by Oracle"
+      ],
+      "accounts": [
+        {
+          "name": "buyer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ticket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "instructionSysvar",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Instructions sysvar for Ed25519 introspection"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "sigInstructionIndex",
+          "type": "u16"
+        },
+        {
+          "name": "eventId",
+          "type": "publicKey"
+        },
+        {
+          "name": "tierLevel",
+          "type": "u8"
+        },
+        {
+          "name": "expiry",
+          "type": "i64"
+        },
+        {
+          "name": "nonce",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "GlobalState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Authority that can update auction params"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "oraclePubkey",
+            "docs": [
+              "Oracle's Ed25519 public key (verified via instruction introspection)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "targetRateBps",
+            "docs": [
+              "Target sales per second in basis points (e.g. 10000 = 1.0 items/sec)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "startTime",
+            "docs": [
+              "Auction start timestamp (unix)"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "basePrice",
+            "docs": [
+              "Base ticket price in lamports"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "itemsSold",
+            "docs": [
+              "Number of tickets sold so far"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump for global state"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Ticket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "buyer",
+            "docs": [
+              "Buyer's wallet"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "purchaseTime",
+            "docs": [
+              "Timestamp of purchase"
+            ],
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vault",
+      "docs": [
+        "Minimal vault account for receiving SOL payments"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reserved",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "SignatureExpired",
+      "msg": "Signature expired"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidEd25519Instruction",
+      "msg": "Invalid Ed25519 instruction"
+    },
+    {
+      "code": 6002,
+      "name": "OracleMismatch",
+      "msg": "Oracle public key mismatch"
+    },
+    {
+      "code": 6003,
+      "name": "MessageMismatch",
+      "msg": "Message format mismatch"
+    },
+    {
+      "code": 6004,
+      "name": "BuyerMismatch",
+      "msg": "Buyer mismatch in signed message"
+    },
+    {
+      "code": 6005,
+      "name": "MathOverflow",
+      "msg": "Math overflow"
+    },
+    {
+      "code": 6006,
+      "name": "EventMismatch",
+      "msg": "Event ID mismatch"
+    }
+  ],
+  "metadata": {
+    "name": "unforgiven",
+    "version": "0.1.0",
+    "address": "D8mRR6zRJSqB1LQ8GPBbHNZdBkMnPhz5LBd6JWCpnXuP"
+  },
+  "address": "D8mRR6zRJSqB1LQ8GPBbHNZdBkMnPhz5LBd6JWCpnXuP"
+}

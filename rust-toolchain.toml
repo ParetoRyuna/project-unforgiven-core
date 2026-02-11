@@ -1,0 +1,5 @@
+# Anchor build 依赖 wit-bindgen 0.51，需要 Cargo 支持 edition2024（Rust 1.85+）
+# 安装后在本目录执行 anchor build 时会自动使用该版本
+[toolchain]
+channel = "1.85"
+components = []
