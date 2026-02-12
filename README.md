@@ -5,7 +5,7 @@ zkTLS‑powered VRGDA anti‑bot engine on Solana. Built for fair launches and l
 ## Project Demo & Walkthrough
 
 - Demo video: [WATCH THE DEMO](https://www.canva.com/design/DAHBEzA1l3Y/xK4la0C_qAXSAs69kQvMhg/edit?utm_content=DAHBEzA1l3Y&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)  
-- Loom walkthrough (audio): [WATCH THE FULL DEMO & CODE EXPLANATION](TBD)  
+- Loom walkthrough (audio): [WATCH THE FULL DEMO & CODE EXPLANATION](https://drive.google.com/file/d/1IqxI9ay85bGh1YTMkAiAbLMKQPGyZbiw/view?usp=sharing)  
 
 Note: The Loom link is pending. It will cover project features, repo structure, full end‑to‑end demo, and a clear explanation of how the project satisfies requirement #7.
 
