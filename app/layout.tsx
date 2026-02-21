@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AppWalletProvider from "@/components/AppWalletProvider";
 
@@ -6,12 +6,13 @@ export const metadata: Metadata = {
   title: "PROJECT UNFORGIVEN",
   description: "Identity-Weighted VRGDA Protocol",
   manifest: "/manifest.json",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false, // 再次强制禁止缩放
-  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false, // 再次强制禁止缩放
 };
 
 export default function RootLayout({

@@ -1,0 +1,57 @@
+[solana]
+ws_url = "ws://127.0.0.1:8900"
+rpc_url = "http://127.0.0.1:8899"
+program_id = "5VqDVHqeCJW1cWZgydjJLG68ShDGVZ45k6cE7hUY9uMW"
+admin_config_pubkey = "BbgU3AzJhDPBbckByFL5JjfPNw391aAYxPDfEBGsRQWo"
+commitment = "confirmed"
+
+[governance]
+authority_keypair_path = "/Users/lenovo/.config/solana/id.json"
+min_action_interval_secs = 5
+
+[rig]
+enabled = false
+model = "gpt-4o-mini"
+
+[runtime]
+event_channel_capacity = 1024
+reconnect_backoff_ms = 500
+
+[thresholds]
+window_secs = 10
+# Demo mode assumes we are spamming guest traffic.
+guest_dignity_score = 25
+verified_user_mode = 2
+min_samples_for_growth = 16
+dedupe_ttl_secs = 20
+
+# Keep demo thresholds deterministic: min == max disables jitter.
+[thresholds.fuzzy]
+jitter_epoch_secs = 3600
+# >= 16 guest events within the window => immediate guest pressure.
+guest_request_min = 16
+guest_request_max = 16
+# We don't rely on acceleration in demo, keep threshold low.
+acceleration_min = 1.0
+acceleration_max = 1.0
+# Guest rate/sec gap in local demo is typically ~1-5.
+scissor_gap_min = 0.5
+scissor_gap_max = 0.5
+# Don't require entropy to be low in demo.
+low_entropy_min = 0.95
+low_entropy_max = 0.95
+# Verified disappearance should be detected quickly.
+verified_absence_rate_max_min = 0.5
+verified_absence_rate_max_max = 0.5
+# Disable edge noise for deterministic demo.
+edge_noise_bps = 0
+
+[thresholds.voting]
+# Weight scissor-gap heavily in demo to guarantee crossing mild threshold.
+dimension_a_weight = 0.20
+dimension_b_weight = 0.65
+dimension_c_weight = 0.15
+
+[thresholds.response]
+mild_probability = 0.55
+severe_probability = 0.75

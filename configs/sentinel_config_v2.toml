@@ -1,0 +1,48 @@
+[solana]
+ws_url = "ws://127.0.0.1:8900"
+rpc_url = "http://127.0.0.1:8899"
+program_id = "5VqDVHqeCJW1cWZgydjJLG68ShDGVZ45k6cE7hUY9uMW"
+admin_config_pubkey = "BbgU3AzJhDPBbckByFL5JjfPNw391aAYxPDfEBGsRQWo"
+commitment = "confirmed"
+
+[governance]
+authority_keypair_path = "/Users/lenovo/.config/solana/id.json"
+min_action_interval_secs = 30
+
+[rig]
+enabled = false
+model = "gpt-4o-mini"
+
+[runtime]
+event_channel_capacity = 1024
+reconnect_backoff_ms = 1500
+
+[thresholds]
+window_secs = 10
+guest_dignity_score = 25
+verified_user_mode = 2
+min_samples_for_growth = 32
+dedupe_ttl_secs = 20
+
+[thresholds.fuzzy]
+jitter_epoch_secs = 7
+guest_request_min = 480
+guest_request_max = 560
+acceleration_min = 1200.0
+acceleration_max = 2600.0
+scissor_gap_min = 18.0
+scissor_gap_max = 35.0
+low_entropy_min = 0.22
+low_entropy_max = 0.40
+verified_absence_rate_max_min = 0.03
+verified_absence_rate_max_max = 0.20
+edge_noise_bps = 180
+
+[thresholds.voting]
+dimension_a_weight = 0.36
+dimension_b_weight = 0.44
+dimension_c_weight = 0.20
+
+[thresholds.response]
+mild_probability = 0.62
+severe_probability = 0.82

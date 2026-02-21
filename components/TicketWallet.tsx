@@ -105,7 +105,7 @@ export default function TicketWallet({
       onReleaseComplete?.();
       resetFlow();
     }, 3600);
-  }, [status, showToast, pushTimer, onReleaseComplete, resetFlow]);
+  }, [feeRate, onReleaseComplete, pushTimer, receivedSol, resetFlow, showToast, status]);
 
   useEffect(() => {
     if (!hasTicket) {

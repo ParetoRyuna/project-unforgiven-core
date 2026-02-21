@@ -179,7 +179,7 @@ export default function InitializeButton({ program, programId }: InitializeButto
     } finally {
       setLoading(false);
     }
-  }, [program, programId, publicKey]);
+  }, [connection, program, programId, publicKey]);
 
   return (
     <div className="flex flex-col gap-2">

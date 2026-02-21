@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="1080" viewBox="0 0 720 1080" fill="none">
+  <rect width="720" height="1080" fill="#0B1012"/>
+  <circle cx="360" cy="325" r="120" fill="#28353A"/>
+  <path d="M155 900C185 700 250 580 360 580C470 580 535 700 565 900H155Z" fill="#28353A"/>
+  <text x="50%" y="95%" dominant-baseline="middle" text-anchor="middle" fill="#D6DFDC" font-size="34" font-family="serif">BAIBUA</text>
+</svg>

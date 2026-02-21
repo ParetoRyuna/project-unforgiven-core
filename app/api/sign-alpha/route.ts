@@ -1,32 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Keypair, PublicKey } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
+import { verifyProof, type Proof } from '@reclaimprotocol/js-sdk';
+import { oracleKeypair } from '@/services/shield-oracle/src/oracle';
 import nacl from 'tweetnacl'; // 需要安装: npm install tweetnacl
 
-// Oracle (Admin) 私钥：优先从 .env 读取 (Spec 3.3 JIT Signing)
-// .env: ORACLE_PRIVATE_KEY="[1,2,3,...]" (64 bytes JSON array)
-function getOracleKeypair(): Keypair {
-  const envKey = process.env.ORACLE_PRIVATE_KEY;
-  if (envKey) {
-    try {
-      const arr = JSON.parse(envKey) as number[];
-      return Keypair.fromSecretKey(Uint8Array.from(arr));
-    } catch (e) {
-      console.warn('Invalid ORACLE_PRIVATE_KEY, using ephemeral key');
-    }
-  }
-  return Keypair.generate();
+type SignAlphaBody = {
+  wallet?: string;
+  eventId?: string;
+  proof?: unknown;
+};
+
+function isProofCandidate(input: unknown): input is Proof {
+  if (!input || typeof input !== 'object') return false;
+  const claimData = (input as { claimData?: unknown }).claimData;
+  const signatures = (input as { signatures?: unknown }).signatures;
+  return !!claimData && typeof claimData === 'object' && Array.isArray(signatures) && signatures.length > 0;
 }
 
-let _ORACLE_KEYPAIR: Keypair | null = null;
-function getOracle(): Keypair {
-  if (!_ORACLE_KEYPAIR) _ORACLE_KEYPAIR = getOracleKeypair();
-  return _ORACLE_KEYPAIR;
+function normalizeProofs(input: unknown): Proof[] {
+  if (!input) return [];
+  const raw = Array.isArray(input) ? input : [input];
+  return raw.filter(isProofCandidate);
+}
+
+function extractProofOwners(proofs: Proof[]): string[] {
+  return proofs
+    .map((proof) => proof.claimData?.owner)
+    .filter((owner): owner is string => typeof owner === 'string' && owner.length > 0);
+}
+
+async function resolveTierLevel(wallet: string, proof: unknown): Promise<{ tierLevel: 1 | 2; error?: string; status?: number }> {
+  const proofs = normalizeProofs(proof);
+  if (proofs.length === 0) return { tierLevel: 2 };
+
+  const allowInsecureDevProof = process.env.ALLOW_INSECURE_DEV_PROOF === '1' && process.env.NODE_ENV !== 'production';
+
+  let verified = false;
+  try {
+    verified = await verifyProof(proofs);
+  } catch {
+    verified = false;
+  }
+
+  if (!verified) {
+    if (allowInsecureDevProof) {
+      console.warn('ALLOW_INSECURE_DEV_PROOF=1: skipping Reclaim signature verification failure');
+      return { tierLevel: 2 };
+    }
+    return { tierLevel: 2, error: 'Invalid Reclaim proof signature', status: 401 };
+  }
+
+  const owners = extractProofOwners(proofs);
+  const ownerMatchesWallet = owners.length > 0 && owners.every((owner) => owner === wallet);
+  if (!ownerMatchesWallet) {
+    if (allowInsecureDevProof) {
+      console.warn('ALLOW_INSECURE_DEV_PROOF=1: skipping proof owner mismatch');
+      return { tierLevel: 2 };
+    }
+    return { tierLevel: 2, error: 'Proof owner does not match wallet', status: 403 };
+  }
+
+  return { tierLevel: 1 };
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { wallet, eventId, mockProof } = body;
+    const body = (await req.json()) as SignAlphaBody;
+    const { wallet, eventId, proof } = body;
 
     if (!wallet) {
       return NextResponse.json({ error: 'Missing wallet' }, { status: 400 });
@@ -37,11 +77,14 @@ export async function POST(req: NextRequest) {
       ? new PublicKey(eventId)
       : new PublicKey('7cVF3X3PvNLTNHd9EqvWHsrtHkeJXwRzBcRuoHoTThVT');
 
-    // Mock zkTLS: JIT scoring -> tier_level (1=Platinum, 2=Gold, 3=Silver)
-    const isScalperMode = req.nextUrl.searchParams.get('mode') === 'scalper';
-    const tierLevel = isScalperMode
-      ? 3
-      : (mockProof?.tier ?? Math.floor(Math.random() * 3) + 1);
+    // Tier is resolved by verified proof ownership:
+    // - valid proof with owner == wallet => verified (1)
+    // - no proof => guest (2)
+    const tierResolution = await resolveTierLevel(userPubkey.toBase58(), proof);
+    if (tierResolution.error) {
+      return NextResponse.json({ error: tierResolution.error }, { status: tierResolution.status ?? 400 });
+    }
+    const tierLevel = tierResolution.tierLevel;
 
     const expiry = Math.floor(Date.now() / 1000) + 60;
     const nonce = BigInt(Date.now()) * BigInt(1000) + BigInt(Math.floor(Math.random() * 1000));
@@ -59,7 +102,7 @@ export async function POST(req: NextRequest) {
     offset += 8;
     message.writeBigUInt64LE(nonce, offset);
 
-    const oracle = getOracle();
+    const oracle = oracleKeypair();
     const signature = nacl.sign.detached(message, oracle.secretKey);
 
     console.log(

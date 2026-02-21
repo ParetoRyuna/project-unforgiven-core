@@ -1,0 +1,27 @@
+{
+  "plugin_id": "anti-bot-ticket-plugin",
+  "version": "0.1.0",
+  "description": "Shield-first ticket checkout plugin",
+  "shield": {
+    "shield_api_base": "http://127.0.0.1:3100",
+    "payload_spec": "PAYLOAD_V0_141",
+    "tx_model": "ed25519_plus_program_instruction",
+    "mode_default": "guest"
+  },
+  "policy_hooks": {
+    "on_allow": "reserve_ticket_and_issue_order",
+    "on_block": "reject_with_human_verification_hint",
+    "on_step_up": "require_user_confirmation_for_surge_price"
+  },
+  "observability": {
+    "required_log_keys": [
+      "event",
+      "wallet",
+      "nonce",
+      "tier",
+      "blocked",
+      "price_lamports",
+      "tx_signature"
+    ]
+  }
+}
