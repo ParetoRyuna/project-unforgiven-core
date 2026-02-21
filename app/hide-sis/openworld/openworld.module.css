@@ -1,0 +1,969 @@
+.page {
+  --ow-bg: #05080b;
+  --ow-ink: #e9eee9;
+  --ow-accent: #ff7f9a;
+  --ow-accent-2: #7ad1ff;
+  --ow-gold: #f1d7a5;
+  --ow-mist: rgba(220, 240, 255, 0.12);
+  --ow-glass: rgba(14, 20, 24, 0.68);
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  background: var(--ow-bg);
+  color: var(--ow-ink);
+  overflow: hidden;
+}
+
+.stage {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.mapLayer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  background:
+    radial-gradient(120% 90% at 40% 0%, rgba(18, 42, 55, 0.45), transparent 60%),
+    radial-gradient(120% 90% at 80% 80%, rgba(60, 20, 40, 0.35), transparent 70%),
+    linear-gradient(180deg, #04070a 0%, #0b1116 60%, #070b0f 100%),
+    repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.04) 1px, transparent 1px, transparent 6px);
+  z-index: 0;
+  --parallax-x: 0px;
+  --parallax-y: 0px;
+}
+
+.mapLayer::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(60% 40% at 20% 20%, rgba(130, 200, 255, 0.12), transparent 60%),
+    radial-gradient(60% 40% at 80% 60%, rgba(255, 170, 200, 0.1), transparent 65%);
+  opacity: 0.8;
+  filter: blur(6px);
+  animation: ow-fog 36s linear infinite;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.mapLayer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(80% 80% at 50% 50%, transparent 55%, rgba(4, 6, 8, 0.7) 100%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 3px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+@keyframes ow-fog {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-4%, 3%, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.mapPlaceholder {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: rgba(12, 16, 20, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+}
+
+.mapPlaceholder p {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.mapPlaceholder span {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.hud {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 20px;
+  max-width: none;
+  margin: 0;
+  overflow-y: auto;
+}
+
+.worldBar {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.95fr) minmax(0, 1.5fr) minmax(170px, 0.55fr);
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(8, 12, 16, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.worldTitle h1 {
+  font-size: 18px;
+  margin: 2px 0;
+}
+
+.kicker {
+  font-size: 10px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.subline {
+  margin-top: 2px;
+  font-size: 11px;
+  opacity: 0.66;
+}
+
+.worldControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  min-width: 0;
+  align-items: center;
+}
+
+.themeInput {
+  border-radius: 12px;
+  border: 1px solid rgba(236, 242, 240, 0.24);
+  background: rgba(12, 18, 20, 0.72);
+  color: #f5f4ef;
+  padding: 10px 12px;
+  font-size: 14px;
+  min-width: 0;
+  width: 100%;
+}
+
+.startButton {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 140, 171, 0.6);
+  color: #fff4f7;
+  font-weight: 700;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, rgba(166, 19, 57, 0.82), rgba(104, 10, 34, 0.82));
+}
+
+.worldStatus {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  padding-top: 0;
+  flex-direction: column;
+}
+
+.ruleCapsules {
+  display: flex;
+  gap: 6px;
+}
+
+.ruleCapsules span {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(12, 16, 20, 0.6);
+}
+
+.countdown {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  font-size: 11px;
+  color: var(--ow-gold);
+}
+
+.countdown strong {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.countdown em {
+  font-style: normal;
+  opacity: 0.7;
+}
+
+.backLink {
+  font-size: 11px;
+  opacity: 0.72;
+  white-space: nowrap;
+}
+
+.errorText {
+  color: #ff9eb3;
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+.hudBody {
+  display: grid;
+  grid-template-columns: minmax(280px, 28vw) minmax(0, 1fr) minmax(300px, 30vw);
+  gap: 14px;
+  align-items: start;
+  min-width: 0;
+  width: 100%;
+  height: calc(100vh - 120px);
+}
+
+.leftHud,
+.rightHud {
+  max-width: none;
+}
+
+.leftHud,
+.rightHud {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  max-height: 100%;
+  padding-bottom: 16px;
+}
+
+.leftHud {
+  grid-column: 1;
+}
+
+.rightHud {
+  grid-column: 3;
+}
+
+.statsCard {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(232, 238, 235, 0.18);
+  background: var(--ow-glass);
+  backdrop-filter: blur(12px);
+}
+
+.statsCard span {
+  font-size: 11px;
+  opacity: 0.7;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.statsCard strong {
+  font-size: 18px;
+}
+
+.page :global(.ow-card) {
+  border-radius: 14px;
+  border: 1px solid rgba(231, 239, 235, 0.18);
+  background: var(--ow-glass);
+  backdrop-filter: blur(12px);
+  padding: 12px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.page :global(.ow-card h3) {
+  margin-bottom: 8px;
+  font-size: 12px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #f5f4ef;
+}
+
+.page :global(.ow-map) {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  z-index: 1;
+  transform: translate3d(var(--parallax-x), var(--parallax-y), 0);
+  transition: transform 140ms ease-out;
+  will-change: transform;
+}
+
+.page :global(.ow-map)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(60% 60% at 50% 52%, rgba(19, 34, 47, 0.18), transparent 80%);
+  pointer-events: none;
+}
+
+.page :global(.ow-map-lines) {
+  position: absolute;
+  inset: 0;
+  stroke: rgba(120, 190, 255, 0.2);
+  stroke-width: 0.6;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.page :global(.ow-zones) {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.page :global(.ow-zone) {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(233, 238, 233, 0.6);
+}
+
+.page :global(.ow-zone em) {
+  display: block;
+  font-style: normal;
+  font-size: 10px;
+  opacity: 0.6;
+  letter-spacing: 0.2em;
+}
+
+.page :global(.ow-node) {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  transform: translate(-50%, -50%);
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(9, 14, 18, 0.9);
+  color: inherit;
+  text-align: left;
+  min-width: 154px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+}
+
+.page :global(.ow-node-dot) {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--ow-accent-2);
+  box-shadow: 0 0 8px rgba(122, 209, 255, 0.65);
+}
+
+.page :global(.ow-node.current) {
+  border-color: rgba(255, 215, 165, 0.7);
+}
+
+.page :global(.ow-node.current)::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 16px;
+  border: 1px solid rgba(241, 215, 165, 0.6);
+  animation: ow-pulse 2.4s ease-in-out infinite;
+}
+
+.page :global(.ow-node.suggested) {
+  border-color: rgba(255, 127, 154, 0.9);
+  box-shadow: 0 0 20px rgba(255, 127, 154, 0.4);
+}
+
+.page :global(.ow-node.danger) {
+  border-color: rgba(255, 110, 110, 0.7);
+}
+
+.page :global(.ow-node-title) {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.page :global(.ow-node-tags) {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.page :global(.ow-node-danger) {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.page :global(.ow-node-hint) {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
+@keyframes ow-pulse {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+
+.page :global(.ow-action-dock) {
+  position: sticky;
+  bottom: 18px;
+  z-index: 3;
+}
+
+.page :global(.ow-action-track) {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(10, 14, 18, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.page :global(.ow-action-pill) {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(15, 20, 24, 0.9);
+  color: inherit;
+  padding: 8px 14px;
+}
+
+.page :global(.ow-action-pill.suggested) {
+  border-color: rgba(255, 127, 154, 0.9);
+  box-shadow: 0 0 20px rgba(255, 127, 154, 0.35);
+}
+
+.page :global(.ow-action-icon) {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.page :global(.ow-action-text) {
+  display: grid;
+  gap: 2px;
+}
+
+.page :global(.ow-action-text strong) {
+  font-size: 13px;
+}
+
+.page :global(.ow-action-text em) {
+  font-style: normal;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.page :global(.ow-action-text small) {
+  font-size: 10px;
+  opacity: 0.7;
+  line-height: 1.2;
+}
+
+.page :global(.ow-action-finalize) {
+  border-color: rgba(241, 215, 165, 0.45);
+}
+
+.page :global(.ow-npc-list) {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.page :global(.ow-npc-card) {
+  border-radius: 14px;
+  border: 1px solid rgba(231, 239, 235, 0.16);
+  padding: 12px;
+  background: rgba(10, 14, 18, 0.84);
+}
+
+.page :global(.ow-npc-head) {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.page :global(.ow-npc-avatar) {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+}
+
+.page :global(.ow-npc-avatar.cold) {
+  color: rgba(255, 180, 190, 0.9);
+  border: 1px solid rgba(255, 120, 140, 0.4);
+}
+
+.page :global(.ow-npc-name) {
+  font-weight: 600;
+}
+
+.page :global(.ow-npc-role) {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.page :global(.ow-npc-relation) {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.page :global(.ow-npc-bars) {
+  display: flex;
+  gap: 4px;
+}
+
+.page :global(.ow-npc-bars span) {
+  width: 18px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.page :global(.ow-npc-bars span.active) {
+  background: rgba(122, 209, 255, 0.7);
+}
+
+.page :global(.ow-npc-relation.cold span.active) {
+  background: rgba(255, 130, 160, 0.7);
+}
+
+.page :global(.ow-npc-actions) {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.page :global(.ow-npc-actions button) {
+  border-radius: 8px;
+  border: 1px solid rgba(231, 239, 235, 0.16);
+  background: rgba(16, 20, 23, 0.9);
+  color: #f2f4ef;
+  padding: 6px;
+  font-size: 12px;
+  display: grid;
+  gap: 1px;
+}
+
+.page :global(.ow-npc-actions button.suggested) {
+  border-color: rgba(255, 127, 154, 0.9);
+  box-shadow: 0 0 16px rgba(255, 127, 154, 0.3);
+}
+
+.page :global(.ow-clue-list) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.page :global(.ow-clue) {
+  border-radius: 12px;
+  border: 1px solid rgba(231, 239, 235, 0.16);
+  padding: 10px;
+  background: rgba(8, 12, 13, 0.85);
+}
+
+.page :global(.ow-clue-head) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.page :global(.ow-clue-name) {
+  font-weight: 600;
+}
+
+.page :global(.ow-clue-meta) {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+.page :global(.ow-clue-tag) {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ow-gold);
+}
+
+.page :global(.ow-clue-actions) {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.page :global(.ow-clue-actions select) {
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid rgba(231, 239, 235, 0.16);
+  background: rgba(16, 20, 23, 0.9);
+  color: #f2f4ef;
+  padding: 6px;
+}
+
+.page :global(.ow-clue-actions button) {
+  border-radius: 8px;
+  border: 1px solid rgba(231, 239, 235, 0.16);
+  background: rgba(16, 20, 23, 0.9);
+  color: #f2f4ef;
+  padding: 6px 10px;
+  display: grid;
+  gap: 1px;
+}
+
+.page :global(.ow-btn-meta) {
+  font-size: 9px;
+  opacity: 0.68;
+  line-height: 1.15;
+}
+
+.page :global(.ow-clue.suggested),
+.page :global(.ow-clue-actions button.suggested) {
+  border-color: rgba(255, 127, 154, 0.9);
+  box-shadow: 0 0 18px rgba(255, 127, 154, 0.25);
+}
+
+.page :global(.ow-empty) {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.page :global(.ow-journal) {
+  max-height: 180px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.page :global(.ow-scene) {
+  border-radius: 16px;
+  border: 1px solid rgba(231, 239, 235, 0.2);
+  background: rgba(10, 14, 16, 0.88);
+  padding: 14px;
+}
+
+.page :global(.ow-quest) {
+  border-color: rgba(255, 221, 176, 0.32);
+  background:
+    linear-gradient(140deg, rgba(40, 22, 18, 0.95), rgba(12, 15, 18, 0.9)),
+    radial-gradient(120% 80% at 0% 0%, rgba(210, 70, 50, 0.2), transparent 60%);
+}
+
+.page :global(.ow-hook) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 140, 171, 0.4);
+  background: rgba(70, 10, 30, 0.4);
+  margin-bottom: 10px;
+}
+
+.page :global(.ow-hook-tag) {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #ffd7df;
+}
+
+.page :global(.ow-rule-top) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.page :global(.ow-rule-top span) {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(9, 12, 16, 0.56);
+}
+
+.page :global(.ow-rulebook) {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  opacity: 0.8;
+  display: grid;
+  gap: 4px;
+}
+
+.page :global(.ow-hook-cn) {
+  font-size: 13px;
+}
+
+.page :global(.ow-hook-en) {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.page :global(.ow-quest-cn) {
+  font-size: 16px;
+  margin-top: 6px;
+}
+
+.page :global(.ow-quest-en) {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.page :global(.ow-quest-next) {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(240, 210, 180, 0.3);
+  background: rgba(12, 14, 16, 0.7);
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.page :global(.ow-quest-next span) {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.page :global(.ow-quest-next strong) {
+  font-size: 14px;
+}
+
+.page :global(.ow-quest-next em) {
+  font-size: 11px;
+  opacity: 0.7;
+  font-style: normal;
+}
+
+.page :global(.ow-quest-reason) {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.page :global(.ow-quest-reason-en) {
+  opacity: 0.65;
+  font-size: 11px;
+}
+
+.page :global(.ow-beat) {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.page :global(.ow-beat:last-child) {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.page :global(.ow-beat-header) {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.7;
+}
+
+.page :global(.ow-beat-cn) {
+  font-size: 16px;
+  line-height: 1.4;
+  margin-top: 6px;
+}
+
+.page :global(.ow-beat-en) {
+  font-size: 12px;
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+.page :global(.ow-consequence) {
+  border-color: rgba(118, 196, 255, 0.35);
+  background: rgba(9, 16, 20, 0.88);
+}
+
+.page :global(.ow-consequence-list) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.page :global(.ow-consequence-chip) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid rgba(231, 239, 235, 0.16);
+  background: rgba(15, 20, 24, 0.8);
+}
+
+.page :global(.ow-consequence-chip.pos) {
+  border-color: rgba(120, 210, 160, 0.5);
+  color: #d9f6e8;
+}
+
+.page :global(.ow-consequence-chip.neg) {
+  border-color: rgba(255, 140, 171, 0.5);
+  color: #ffd3dd;
+}
+
+.page :global(.ow-consequence-chip.warn) {
+  border-color: rgba(255, 184, 92, 0.5);
+  color: #ffe3bf;
+}
+
+.page :global(.ow-consequence-chip.cool) {
+  border-color: rgba(128, 200, 255, 0.45);
+  color: #d4ecff;
+}
+
+.page :global(.ow-ending) {
+  border-color: rgba(255, 140, 171, 0.5);
+}
+
+.page :global(.ow-ending-sub) {
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+@media (max-width: 1100px) {
+  .worldBar {
+    grid-template-columns: 1fr;
+  }
+
+  .worldStatus {
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex-direction: row;
+  }
+
+  .worldControls {
+    grid-template-columns: 1fr;
+  }
+
+  .hudBody {
+    grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr);
+    height: auto;
+  }
+
+  .leftHud {
+    grid-column: 1;
+  }
+
+  .rightHud {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 900px) {
+  .hudBody {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .leftHud,
+  .rightHud {
+    max-width: none;
+  }
+
+  .page :global(.ow-map) {
+    width: 100vw;
+    height: 55vh;
+  }
+
+  .worldControls {
+    grid-template-columns: 1fr;
+  }
+
+  .worldStatus {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .leftHud {
+    grid-column: 1;
+  }
+
+  .rightHud {
+    grid-column: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapLayer::before {
+    animation: none;
+  }
+
+  .page :global(.ow-node.current)::after {
+    animation: none;
+  }
+}
