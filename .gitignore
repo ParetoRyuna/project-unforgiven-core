@@ -5,11 +5,13 @@ node_modules/
 target/
 .next/
 out/
+*.tsbuildinfo
 
 # Environment
 .env
 .env.local
 .env.*.local
+.keys/
 
 # Backup files
 *.bak
@@ -37,3 +39,6 @@ test-ledger/
 
 # Large vendor assets
 public/partners/CG-GT-Logos.zip
+
+# Local-only private notes (do not upload)
+docs-private/

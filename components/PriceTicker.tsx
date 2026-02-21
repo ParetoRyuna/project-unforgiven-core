@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 
 const FALLBACK_PRICE = 150.0;
 const REFRESH_MS = 30_000;
@@ -65,9 +66,11 @@ export default function PriceTicker({ variant = 'fixed' }: PriceTickerProps) {
   return (
     <div className={wrapperClass}>
       <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-2 text-xs text-zinc-200/80 shadow-lg backdrop-blur-md">
-        <img
+        <Image
           src="/partners/coingecko-mark.png"
           alt="CoinGecko"
+          width={16}
+          height={16}
           className="h-4 w-4"
           loading="lazy"
         />

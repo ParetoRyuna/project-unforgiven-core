@@ -6,6 +6,9 @@ use anchor_lang::solana_program::{
     system_instruction,
     sysvar::instructions as ix_sysvar,
 };
+mod unforgiven_math;
+
+use unforgiven_math::calculate_vrgda_price;
 
 declare_id!("7cVF3X3PvNLTNHd9EqvWHsrtHkeJXwRzBcRuoHoTThVT");
 
@@ -19,10 +22,10 @@ const BPS: u128 = 10000;
 /// Minimum alpha score (0.05) to prevent division-by-zero exploits
 const MIN_ALPHA_BPS: u16 = 500;
 
-/// Linear VRGDA decay constant for price modifier (basis points per item)
+/// Sales-velocity scaling constant used to derive exponential growth/decay rate
 const DECAY_CONSTANT: i128 = 100;
 
-/// Maximum price modifier in basis points (±50% cap)
+/// Maximum sales velocity in basis points per second (±50% cap)
 const PRICE_MODIFIER_MAX_BPS: i128 = 5000;
 
 /// Ed25519 instruction data layout constants
@@ -176,18 +179,19 @@ pub mod unforgiven {
         // Tier -> Alpha BPS for VRGDA: 1=Platinum(10000), 2=Gold(5000), 3=Silver(2500)
         let safe_alpha = tier_to_alpha_bps(tier_level).max(MIN_ALPHA_BPS) as u128;
 
-        // ----- Linear VRGDA Math (all u128/i128, checked ops) -----
+        // ----- Exponential VRGDA Math (all checked ops) -----
         let state = &ctx.accounts.global_state;
         let now: i64 = clock.unix_timestamp;
         let duration: i64 = now
             .checked_sub(state.start_time)
             .ok_or(UnforgivenError::MathOverflow)?;
 
-        let duration_u128: u128 = if duration > 0 {
-            duration as u128
+        let duration_u64: u64 = if duration > 0 {
+            duration as u64
         } else {
             0
         };
+        let duration_u128 = duration_u64 as u128;
 
         // target_sold = (now - start_time) * target_rate_bps / 10000
         let target_sold: u128 = duration_u128
@@ -203,22 +207,21 @@ pub mod unforgiven {
             .checked_sub(target_sold as i128)
             .ok_or(UnforgivenError::MathOverflow)?;
 
-        // price_modifier_bps = sales_difference * DECAY_CONSTANT (clamped)
-        let price_modifier_bps: i128 = sales_difference
+        // sales_velocity_bps_per_sec = (sales_difference * DECAY_CONSTANT) / elapsed_seconds (clamped)
+        let duration_for_velocity = i128::from(duration_u64.max(1));
+        let sales_velocity_bps: i64 = sales_difference
             .checked_mul(DECAY_CONSTANT)
             .ok_or(UnforgivenError::MathOverflow)?
-            .clamp(-PRICE_MODIFIER_MAX_BPS, PRICE_MODIFIER_MAX_BPS);
-
-        // vrgda_price = base_price * (10000 + price_modifier_bps) / 10000
-        let numerator: u128 = (BPS as i128)
-            .checked_add(price_modifier_bps)
-            .ok_or(UnforgivenError::MathOverflow)? as u128;
-
-        let vrgda_price: u128 = (state.base_price as u128)
-            .checked_mul(numerator)
+            .checked_div(duration_for_velocity)
             .ok_or(UnforgivenError::MathOverflow)?
-            .checked_div(BPS)
-            .ok_or(UnforgivenError::MathOverflow)?;
+            .clamp(-PRICE_MODIFIER_MAX_BPS, PRICE_MODIFIER_MAX_BPS) as i64;
+
+        let vrgda_price: u128 = calculate_vrgda_price(
+            state.base_price,
+            sales_velocity_bps,
+            duration_u64,
+        )
+        .map_err(|_| error!(UnforgivenError::MathOverflow))? as u128;
 
         // final_price = vrgda_price * 10000 / safe_alpha
         let final_price: u64 = (vrgda_price
@@ -429,6 +432,7 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(sig_instruction_index: u16, event_id: Pubkey, tier_level: u8, expiry: i64, nonce: u64)]
 pub struct BuyTicket<'info> {
     #[account(mut)]
     pub buyer: Signer<'info>,

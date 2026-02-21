@@ -7,6 +7,7 @@ skip-lint = false
 
 [programs.localnet]
 unforgiven = "7cVF3X3PvNLTNHd9EqvWHsrtHkeJXwRzBcRuoHoTThVT"
+unforgiven_v2 = "5VqDVHqeCJW1cWZgydjJLG68ShDGVZ45k6cE7hUY9uMW"
 
 [registry]
 url = "https://api.apr.dev"

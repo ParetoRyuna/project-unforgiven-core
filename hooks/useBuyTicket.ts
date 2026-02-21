@@ -45,11 +45,24 @@ export interface BuyTicketParams {
   wallet: WalletContextState;
   program: Program;
   apiBaseUrl?: string; // 默认 '/api'，用于 Next.js
+  proof?: unknown;
 }
 
 export interface BuyTicketResult {
   txSignature?: string;
   error?: string;
+}
+
+function normalizeSignedProofPayload(proof: unknown): unknown | undefined {
+  if (!proof) return undefined;
+  const proofs = Array.isArray(proof) ? proof : [proof];
+  const signed = proofs.filter((item) => {
+    if (!item || typeof item !== 'object') return false;
+    const signatures = (item as { signatures?: unknown }).signatures;
+    return Array.isArray(signatures) && signatures.length > 0;
+  });
+  if (signed.length === 0) return undefined;
+  return Array.isArray(proof) ? signed : signed[0];
 }
 
 export function useBuyTicket() {
@@ -62,6 +75,7 @@ export function useBuyTicket() {
       wallet,
       program,
       apiBaseUrl = '/api',
+      proof,
     }: BuyTicketParams): Promise<BuyTicketResult> => {
       setLoading(true);
       setError(null);
@@ -85,6 +99,7 @@ export function useBuyTicket() {
           body: JSON.stringify({
             wallet: publicKey.toBase58(),
             eventId: globalStatePda.toBase58(),
+            proof: normalizeSignedProofPayload(proof),
           }),
         });
 

@@ -82,7 +82,8 @@ export default function IdentityVerifier({ onVerifySuccess, setTier, disabled }:
   const restoreOnceRef = useRef(false);
 
   const appId = process.env.NEXT_PUBLIC_RECLAIM_APP_ID ?? DEMO_APP_ID;
-  const appSecret = process.env.NEXT_PUBLIC_RECLAIM_APP_SECRET ?? '';
+  const allowInsecureClientReclaim = process.env.NEXT_PUBLIC_ALLOW_INSECURE_RECLAIM === '1';
+  const appSecret = allowInsecureClientReclaim ? (process.env.NEXT_PUBLIC_RECLAIM_APP_SECRET ?? '') : '';
   const providerId = process.env.NEXT_PUBLIC_RECLAIM_PROVIDER_ID ?? '';
 
   useEffect(() => {
@@ -148,6 +149,14 @@ export default function IdentityVerifier({ onVerifySuccess, setTier, disabled }:
         }
         return;
       }
+      if (!allowInsecureClientReclaim) {
+        if (mounted) {
+          setProofRequest(null);
+          setReclaimReady(false);
+          setError('已启用安全模式：浏览器端 Reclaim Secret 已禁用，请使用 Simulation Console。');
+        }
+        return;
+      }
       if (!appSecret) {
         if (mounted) {
           setError('Reclaim app secret 未配置，可使用 Simulation Console 演示。');
@@ -205,7 +214,7 @@ export default function IdentityVerifier({ onVerifySuccess, setTier, disabled }:
     };
     init();
     return () => { mounted = false; };
-  }, [appId, appSecret, providerId]);
+  }, [allowInsecureClientReclaim, appId, appSecret, providerId]);
 
   const handleVerify = useCallback(async (force = false) => {
     if (status === 'verified' && !force) return;
