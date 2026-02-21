@@ -309,7 +309,6 @@ export default function Home() {
         wallet,
         program,
         apiBaseUrl: '/api',
-        proof: proofData ?? undefined,
       });
       if (result.txSignature) {
         setHasTicket(true);
@@ -325,7 +324,7 @@ export default function Home() {
       alert(msg);
       setHasTicket(false);
     }
-  }, [buyTicket, connection, program, proofData, refreshGlobalState, wallet]);
+  }, [buyTicket, connection, program, refreshGlobalState, wallet]);
 
   const handleRefund = useCallback(() => {
     setHasTicket(false);
