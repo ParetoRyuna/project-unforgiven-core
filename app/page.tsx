@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useUnforgivenProgram } from '@/hooks/useUnforgivenProgram';
 import { useBuyTicket } from '@/hooks/useBuyTicket';
@@ -51,13 +52,6 @@ const DEMO_ITEMS_SOLD_TIER3 = '8888';
 const TARGET_SALES_PER_HOUR = 500;
 const TICKET_STORAGE_PREFIX = 'unforgiven:ticket:';
 
-type AccessTier = 'fan' | 'guest' | 'scalper';
-
-function formatSol(value: number, digits: number = 2): string {
-  if (!Number.isFinite(value)) return '0.00';
-  return value.toFixed(digits);
-}
-
 function lamportsToSol(lamports: BN): number {
   return Number(lamports.toString()) / LAMPORTS_PER_SOL.toNumber();
 }
@@ -82,10 +76,13 @@ function LandingView() {
       <motion.div variants={itemEntrance} className="w-full">
         <Card className={cn('glass-panel overflow-hidden', 'bg-black/60 backdrop-blur-md border border-red-950/50')}>
           <div className="relative aspect-[3/2] w-full bg-zinc-900">
-            <img
+            <Image
               src={EVENT.posterUrl}
               alt={EVENT.name}
-              className="absolute inset-0 w-full h-full object-cover opacity-70 z-0"
+              fill
+              sizes="(max-width: 768px) 100vw, 640px"
+              className="absolute inset-0 h-full w-full object-cover opacity-70 z-0"
+              priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
             <div className="absolute top-3 left-3 z-10 rounded-md bg-red-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg">
@@ -94,7 +91,7 @@ function LandingView() {
           </div>
           <CardContent className="p-6 text-center space-y-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              2026 TOUR 'FLAME RISES' IN HONG KONG
+              2026 TOUR &#39;FLAME RISES&#39; IN HONG KONG
             </h1>
             <p className="text-zinc-400 text-sm">{EVENT.venue}</p>
             <p className="text-zinc-500 text-xs">{EVENT.date}</p>
@@ -154,7 +151,11 @@ export default function Home() {
         [Buffer.from('global')],
         program.programId
       );
-      const account = await program.account.globalState.fetch(globalStatePda);
+      const account = await (
+        program.account as unknown as {
+          globalState: { fetch: (pubkey: PublicKey) => Promise<Record<string, unknown>> };
+        }
+      ).globalState.fetch(globalStatePda);
       setGlobalState({
         basePrice: account.basePrice as BN,
         targetRateBps: account.targetRateBps as BN,
@@ -212,7 +213,6 @@ export default function Home() {
   }, [hasTicket, walletKey]);
 
   const isFan = !!proofData;
-  const activeTier: AccessTier = isFan ? 'fan' : scalperMode ? 'scalper' : 'guest';
   const tierLevel = currentTier !== null ? currentTier : (isFan ? 1 : scalperMode ? 3 : 2);
   const tierBadgeLabel =
     tierLevel === 1 ? 'Tier 1: Verified Fan' : tierLevel === 2 ? 'Tier 2: Guest' : 'Tier 3: High Risk Strategy Active';
@@ -250,6 +250,7 @@ export default function Home() {
       : globalState
         ? Number(globalState.itemsSold.toString())
         : 0;
+  const chainSales = globalState ? Number(globalState.itemsSold.toString()) : 0;
   const timeElapsedHours =
     simulatedTime != null
       ? simulatedTime
@@ -274,7 +275,6 @@ export default function Home() {
   const baselineTotalSol =
     baselineQuote != null ? faceValueSol + lamportsToSol(baselineQuote.deposit) : 0;
   const currentTotalSol = faceValueSol + depositSol;
-  const salesDelta = currentSales - targetSales;
   const totalVariant =
     simulationActive && baselineQuote != null && (tierLevel === 2 || tierLevel === 3)
       ? currentTotalSol > baselineTotalSol
@@ -287,9 +287,6 @@ export default function Home() {
   const auctionNotStarted =
     !!stateError &&
     /account.*not|does not exist|not found|was not found/i.test(stateError);
-  const buyButtonLabel = faceValueLamports
-    ? `Pay ${formatSol(faceValueSol, 1)} SOL + Deposit`
-    : 'Pay Face Value + Deposit';
   const animatedDepositRef = useRef(0);
   const [animatedDeposit, setAnimatedDeposit] = useState(0);
 
@@ -313,7 +310,6 @@ export default function Home() {
         program,
         apiBaseUrl: '/api',
         proof: proofData ?? undefined,
-        mode: scalperMode && !proofData ? 'scalper' : undefined,
       });
       if (result.txSignature) {
         setHasTicket(true);
@@ -329,7 +325,7 @@ export default function Home() {
       alert(msg);
       setHasTicket(false);
     }
-  }, [connected, publicKey, program, programId, connection, wallet, buyTicket, proofData, scalperMode, refreshGlobalState]);
+  }, [buyTicket, connection, program, proofData, refreshGlobalState, wallet]);
 
   const handleRefund = useCallback(() => {
     setHasTicket(false);
@@ -408,10 +404,13 @@ export default function Home() {
           <motion.div variants={itemEntrance} className="w-full">
             <Card className={cn('glass-panel overflow-hidden', 'bg-black/60 backdrop-blur-md border border-red-950/50')}>
               <div className="relative aspect-[3/2] w-full bg-zinc-900">
-                <img
+                <Image
                   src={EVENT.posterUrl}
                   alt={EVENT.name}
-                  className="absolute inset-0 w-full h-full object-cover opacity-60 z-0"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 640px"
+                  className="absolute inset-0 h-full w-full object-cover opacity-60 z-0"
+                  priority
                 />
                 <div className="absolute top-2 right-2 z-10 rounded-md bg-red-600 px-2 py-1 text-xs font-bold text-white shadow-lg">
                   🔴 SELLING FAST
@@ -593,6 +592,8 @@ export default function Home() {
       <SimulationPanel
         simulatedSold={simulatedSold}
         simulatedTime={simulatedTime}
+        targetSales={targetSales}
+        chainSales={chainSales}
         onChange={(sold, time) => {
           setSimulatedSold(sold);
           setSimulatedTime(time);

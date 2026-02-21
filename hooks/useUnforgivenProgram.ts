@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { useAnchorWallet, useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { AnchorProvider, Program, Idl, setProvider } from "@coral-xyz/anchor";
-import { PublicKey } from "@solana/web3.js";
+import type { Wallet as AnchorWallet } from "@coral-xyz/anchor/dist/cjs/provider";
+import { PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { sha256 } from "@noble/hashes/sha256";
 import { utf8ToBytes } from "@noble/hashes/utils";
 import idlImport from "@/app/idl/unforgiven.json";
@@ -51,7 +52,7 @@ export const useUnforgivenProgram = () => {
   const anchorWallet = useAnchorWallet();
   const wallet = useWallet();
 
-  const providerWallet = useMemo(() => {
+  const providerWallet = useMemo<AnchorWallet | null>(() => {
     // #region agent log
     fetch('http://localhost:7242/ingest/4cb53e36-f6fc-451a-be89-d4a98da81fe9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useUnforgivenProgram.ts:providerWallet_start',message:'providerWallet computation start',data:{hasAnchorWallet:!!anchorWallet,hasPublicKey:!!wallet.publicKey,hasSignTransaction:!!wallet.signTransaction,hasSignAllTransactions:!!wallet.signAllTransactions},timestamp:Date.now(),hypothesisId:'A,B'})}).catch(()=>{});
     // #endregion
@@ -59,7 +60,13 @@ export const useUnforgivenProgram = () => {
       // #region agent log
       fetch('http://localhost:7242/ingest/4cb53e36-f6fc-451a-be89-d4a98da81fe9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useUnforgivenProgram.ts:providerWallet_anchor',message:'Using anchorWallet',data:{publicKey:anchorWallet.publicKey?.toBase58()},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
       // #endregion
-      return anchorWallet;
+      return {
+        publicKey: anchorWallet.publicKey,
+        signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> =>
+          anchorWallet.signTransaction(tx as Transaction) as Promise<T>,
+        signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> =>
+          anchorWallet.signAllTransactions(txs as Transaction[]) as Promise<T[]>,
+      };
     }
     if (!wallet.publicKey || !wallet.signTransaction) {
       // #region agent log
@@ -69,13 +76,17 @@ export const useUnforgivenProgram = () => {
     }
     const signAllTransactions =
       wallet.signAllTransactions ??
-      (async (txs) => Promise.all(txs.map((tx) => wallet.signTransaction!(tx))));
+      (async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> =>
+        Promise.all(
+          txs.map((tx) => wallet.signTransaction!(tx as Transaction | VersionedTransaction) as Promise<T>),
+        ));
     // #region agent log
     fetch('http://localhost:7242/ingest/4cb53e36-f6fc-451a-be89-d4a98da81fe9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useUnforgivenProgram.ts:providerWallet_created',message:'providerWallet created from wallet',data:{publicKey:wallet.publicKey.toBase58()},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
     // #endregion
     return {
       publicKey: wallet.publicKey,
-      signTransaction: wallet.signTransaction,
+      signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> =>
+        wallet.signTransaction!(tx as Transaction | VersionedTransaction) as Promise<T>,
       signAllTransactions,
     };
   }, [anchorWallet, wallet.publicKey, wallet.signTransaction, wallet.signAllTransactions]);
