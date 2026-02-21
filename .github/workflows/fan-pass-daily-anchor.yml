@@ -1,0 +1,22 @@
+name: fan-pass-daily-anchor
+
+on:
+  schedule:
+    - cron: "10 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  anchor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run daily anchor trigger
+        env:
+          HUB_DAILY_ANCHOR_URL: ${{ secrets.HUB_DAILY_ANCHOR_URL }}
+          HUB_DAILY_ANCHOR_TOKEN: ${{ secrets.HUB_DAILY_ANCHOR_TOKEN }}
+        run: |
+          if [ -z "${HUB_DAILY_ANCHOR_URL}" ] || [ -z "${HUB_DAILY_ANCHOR_TOKEN}" ]; then
+            echo "Missing HUB_DAILY_ANCHOR_URL or HUB_DAILY_ANCHOR_TOKEN secret"
+            exit 1
+          fi
+          bash scripts/anchor_daily_v2.sh

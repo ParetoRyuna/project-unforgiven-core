@@ -1,0 +1,42 @@
+[thresholds]
+window_secs = 10
+guest_dignity_score = 25
+verified_user_mode = 2
+min_samples_for_growth = 32
+dedupe_ttl_secs = 20
+
+[thresholds.fuzzy]
+# Fuzzy threshold refresh cadence.
+jitter_epoch_secs = 7
+
+# Guest request threshold (count in window), jittered in [min, max].
+guest_request_min = 480
+guest_request_max = 560
+
+# Dimension A: second-derivative acceleration threshold, jittered.
+acceleration_min = 1200.0
+acceleration_max = 2600.0
+
+# Dimension B: guest-verified rate gap threshold (req/s), jittered.
+scissor_gap_min = 18.0
+scissor_gap_max = 35.0
+
+# Dimension C: low entropy threshold (0~1), jittered; lower means more regular timing.
+low_entropy_min = 0.22
+low_entropy_max = 0.40
+
+# Verified disappearance gate (req/s upper bound), jittered.
+verified_absence_rate_max_min = 0.03
+verified_absence_rate_max_max = 0.20
+
+# Extra anti-probing probability noise in basis points.
+edge_noise_bps = 180
+
+[thresholds.voting]
+dimension_a_weight = 0.36
+dimension_b_weight = 0.44
+dimension_c_weight = 0.20
+
+[thresholds.response]
+mild_probability = 0.62
+severe_probability = 0.82

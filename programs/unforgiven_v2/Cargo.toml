@@ -1,0 +1,25 @@
+[package]
+name = "unforgiven_v2"
+version = "0.1.0"
+description = "UNFORGIVEN v2 - Universal Fair Distribution Middleware"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "unforgiven_v2"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.29.0"
+anchor-spl = "0.29.0"
+spl-token = "4.0.0"
+blake3 = "=1.5.1"
+
+[target.'cfg(not(target_os = "solana"))'.dependencies]
+ed25519-dalek = "1.0.1"
