@@ -7,7 +7,6 @@ if (process.env.SHOW_NODE_DEPRECATION !== '1') {
 const fs = require('fs');
 const path = require('path');
 const {
-  BPF_LOADER_UPGRADEABLE_PROGRAM_ID,
   ComputeBudgetProgram,
   Connection,
   Keypair,
@@ -22,6 +21,7 @@ const {
   findAdminConfigPda,
   buildPreviewTxInstructions,
 } = require('./tx_builder_v2');
+const { deriveProgramDataAddress } = require('./solana_program_ids');
 
 function hexToBytes(hex) {
   const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
@@ -58,13 +58,6 @@ async function fetchShieldPayload(walletBase58) {
 
 function buildIx(programId, keys, data) {
   return new TransactionInstruction({ programId, keys, data });
-}
-
-function deriveProgramDataAddress(programId) {
-  return PublicKey.findProgramAddressSync(
-    [new PublicKey(programId).toBuffer()],
-    BPF_LOADER_UPGRADEABLE_PROGRAM_ID,
-  )[0];
 }
 
 function parsePreviewEventFromLogs(logMessages) {

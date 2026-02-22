@@ -63,7 +63,10 @@ export async function POST(req: NextRequest) {
         ip,
       })
     );
-    return NextResponse.json({ error: 'Shield API temporarily frozen by operator' }, { status: 503 });
+    return NextResponse.json(
+      { error: 'Shield API temporarily frozen by operator', reason: 'shield_frozen' },
+      { status: 503 },
+    );
   }
 
   try {
@@ -87,12 +90,21 @@ export async function POST(req: NextRequest) {
       );
       if (unavailable) {
         return NextResponse.json(
-          { error: 'Rate limit backend unavailable', retryAfterSec: decision.retryAfterSec },
+          {
+            error: 'Rate limit backend unavailable',
+            reason: 'rate_limit_backend_unavailable',
+            retryAfterSec: decision.retryAfterSec,
+          },
           { status: 503, headers: { 'Retry-After': String(decision.retryAfterSec) } }
         );
       }
       return NextResponse.json(
-        { error: 'Rate limit exceeded', retryAfterSec: decision.retryAfterSec, scope: decision.scope },
+        {
+          error: 'Rate limit exceeded',
+          reason: 'rate_limited',
+          retryAfterSec: decision.retryAfterSec,
+          scope: decision.scope,
+        },
         { status: 429, headers: { 'Retry-After': String(decision.retryAfterSec) } }
       );
     }
@@ -100,6 +112,6 @@ export async function POST(req: NextRequest) {
     const result = await handleShieldScoreRequest(body ?? {});
     return NextResponse.json(result.body, { status: result.status });
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON body', reason: 'invalid_json' }, { status: 400 });
   }
 }

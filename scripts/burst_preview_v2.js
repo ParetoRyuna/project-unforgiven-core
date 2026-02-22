@@ -7,7 +7,6 @@ if (process.env.SHOW_NODE_DEPRECATION !== '1') {
 const fs = require('fs');
 const path = require('path');
 const {
-  BPF_LOADER_UPGRADEABLE_PROGRAM_ID,
   ComputeBudgetProgram,
   Connection,
   Keypair,
@@ -21,6 +20,7 @@ const {
   buildPreviewTxInstructions,
   discriminator,
 } = require('./tx_builder_v2');
+const { deriveProgramDataAddress } = require('./solana_program_ids');
 
 function loadKeypair(filePath) {
   const raw = JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -57,13 +57,6 @@ async function fetchShieldPayload(walletBase58) {
 
 function buildIx(programId, keys, data) {
   return new TransactionInstruction({ programId, keys, data });
-}
-
-function deriveProgramDataAddress(programId) {
-  return PublicKey.findProgramAddressSync(
-    [new PublicKey(programId).toBuffer()],
-    BPF_LOADER_UPGRADEABLE_PROGRAM_ID,
-  )[0];
 }
 
 function userModeToTier(userMode) {
