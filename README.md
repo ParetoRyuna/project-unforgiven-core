@@ -97,10 +97,8 @@ Plugin decision contract and semantics:
 - v2 docs: `docs/v2`
 - lab docs: `docs/lab`
 
-## Docs and Submission
+## Docs
 
 - v2 docs index: `docs/v2/README.md`
 - execution flow: `docs/v2/EXECUTION_FLOW.md`
 - ops runbook: `docs/v2/OPS_RUNBOOK.md`
-- Eternal submission draft: `docs/submission/ETERNAL_SUBMISSION_EN.md`
-- 180s pitch script: `docs/submission/PITCH_180S_EN.md`
