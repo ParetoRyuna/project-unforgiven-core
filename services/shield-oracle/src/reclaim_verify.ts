@@ -120,7 +120,7 @@ export async function verifyReclaimProofBundle(input: {
     deps.claimProofIdentifierFn ?? claimProofIdentifierForReplayProtection;
   for (const identifier of identifiers) {
     const claimResult = await claimProofIdentifierFn(identifier);
-    if (!claimResult.ok) {
+    if (claimResult.ok === false) {
       if (claimResult.reason === 'backend_unavailable') {
         return { ok: false, status: 503, reason: 'replay_backend_unavailable' };
       }
