@@ -2,59 +2,58 @@
 
 Universal fairness middleware for high-velocity Solana launches.
 
-UNFORGIVEN v2 combines zkTLS-backed user weighting, on-chain verifiable authorization, and operational guardrails to reduce bot extraction while keeping integration simple for launch and access flows.
+UNFORGIVEN v2 combines Shield-first scoring, signed execution payloads, and on-chain verifiable checks to reduce bot extraction without forcing custom anti-bot logic into every app.
 
-## Why
+## Competition Snapshot (Eternal)
 
-Fast launches break fairness first:
+Current repo state includes:
 
-- bot bursts distort price discovery
-- real users get worse execution and access
-- static allowlists and static pricing are easy to game
+- Shield oracle hardening (`fail-closed` policies in production)
+  - rate-limit Redis unavailable => fail-closed
+  - replay store Redis unavailable => fail-closed
+  - provider allowlist required in production
+- Hub decision engine with behavior signals
+  - scenario-aware signals from telemetry summaries
+  - risk signal merge into quote decisions (`allow | step_up | block`)
+- Shadow-mode behavior lab (`/lab`)
+  - playable story/case/daily/pressure routes
+  - telemetry ingest + shadow decision record APIs
+  - no user-flow blocking in lab mode
+- Plugin Contract V1
+  - stable output schema for integrators
+  - contract tests + smoke script
 
-UNFORGIVEN v2 provides a **Shield-first** path that can be enforced on-chain, not only at the UI/API layer.
+## Reviewer Quick Start (Recommended)
 
-## How It Works
-
-1. **Shield API**
-   - verifies Reclaim/zkTLS proofs (server-side)
-   - maps user signals to a dignity score / adapter mask
-   - returns a deterministic signed payload
-
-2. **Client transaction (2 instructions)**
-   - `Ed25519Program.verify`
-   - `UNFORGIVEN v2 preview/execute instruction`
-
-3. **On-chain enforcement**
-   - validates the prior Ed25519 instruction via `sysvar::instructions`
-   - applies policy checks and pricing logic
-   - separates `preview_price` (repeatable UX path) from `execute_shield` (one-time proof consumption path)
-
-4. **Operations / response**
-   - Sentinel watches preview events
-   - governance actions can be triggered on burst patterns
-   - reset flow and smoke report validate recovery
-
-## Quick Validation
-
-Run the strict end-to-end gate:
+Run this exact path:
 
 ```bash
-npm run gate:all
+cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+npm install
+npm run ci:gate
+npm run build
+npm run dev
 ```
 
-This validates:
-- checks + tests + tx-builder smoke
-- local stack boot (validator + API + sentinel)
-- preview burst flow
-- governance action submission
-- admin reset
-- post-reset preview sanity
+Then open:
 
-Generated report:
-- `/tmp/wanwan-ops-smoke-report.json`
+- `http://localhost:3000/lab`
+- `http://localhost:3000/fan-pass`
+- `http://localhost:3000/api/lab/shadow/records?limit=20`
 
-## Architecture (v2 Core Flow)
+## Evidence Path (Optional, 3-5 minutes)
+
+If you want deeper technical proof quickly:
+
+```bash
+cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+npm run test:shield:hardening
+npm run test:hub
+npm run test:plugin:ticket
+SHIELD_API_BASE=http://127.0.0.1:3100 npm run smoke:plugin:ticket:v2
+```
+
+## Core Flow
 
 ```mermaid
 sequenceDiagram
@@ -67,59 +66,41 @@ sequenceDiagram
 
   U->>A: Launch action (buy / claim / unlock)
   A->>S: Request shield quote + signed payload
-  S-->>A: 141-byte payload + oracle signature + decision inputs
+  S-->>A: payload + oracle signature + decision inputs
   A->>C: Build tx [Ed25519 verify, preview/execute]
   C->>P: Submit transaction
-  P->>P: Verify prior Ed25519 ix + validate policy
-  P-->>C: Emit preview/execution event
-  T->>T: Detect burst patterns / trigger governance
+  P->>P: Verify prior Ed25519 instruction + policy checks
+  P-->>C: Emit preview/execute event
+  T->>T: Observe burst patterns / governance response
 ```
 
-## Integration Surface
+## Integration Contract
 
-UNFORGIVEN v2 is designed as middleware, not a single app.
+Standard Shield response fields:
 
-Standard handshake returned by Shield API:
-- `payload_hex` (fixed 141-byte payload)
-- `oracle_signature_hex` (Ed25519 signature)
+- `payload_hex`
+- `oracle_signature_hex`
 - `oracle_pubkey`
 
-Client transaction model:
-- `Ed25519Program.verify`
-- `UNFORGIVEN v2 preview/execute instruction`
+Plugin decision contract and semantics:
 
-Integration assets:
-- SDK: `packages/universal-shield-sdk`
-- Payload spec: `docs/v2/PAYLOAD_V0_SPEC.md`
-- Example plugin: `examples/anti-bot-ticket-plugin/index.js`
-
-## Demo Verticals (Examples)
-
-These example surfaces show the same middleware can plug into different product flows:
-
-- Fan Pass Hub demo: `app/fan-pass/page.tsx`
-- Hide & Sis demo routes: `app/hide-sis`
-
-They are examples of integration surfaces. The core product is **UNFORGIVEN v2 middleware**.
+- `docs/v2/PLUGIN_CONTRACT_V1.md`
+- `examples/anti-bot-ticket-plugin/index.js`
 
 ## Repository Map
 
-- v2 program: `programs/unforgiven_v2`
-- Shield API / oracle logic: `services/shield-oracle`
-- Dignity scoring adapters: `services/dignity-scoring`
-- Sentinel service: `crates/sentinel`
+- v2 on-chain program: `programs/unforgiven_v2`
+- Shield oracle: `services/shield-oracle`
+- Fan-pass hub decision layer: `services/fan-pass-hub`
+- Behavior lab engine: `services/behavior-lab-engine`
+- Sentinel: `crates/sentinel`
 - v2 docs: `docs/v2`
+- lab docs: `docs/lab`
 
-## Documentation
+## Docs and Submission
 
 - v2 docs index: `docs/v2/README.md`
-- architecture notes: `docs/v2/ARCHITECTURE.md`
-- preview/execute split: `docs/v2/EXECUTION_FLOW.md`
+- execution flow: `docs/v2/EXECUTION_FLOW.md`
 - ops runbook: `docs/v2/OPS_RUNBOOK.md`
-- version map: `docs/VERSION_MAP.md`
-
-## Submission Materials (Drafts)
-
-- Eternal submission draft (EN): `docs/submission/ETERNAL_SUBMISSION_EN.md`
-- 180s pitch script (EN): `docs/submission/PITCH_180S_EN.md`
-- Judge FAQ (CN): `docs/submission/JUDGE_FAQ_CN.md`
+- Eternal submission draft: `docs/submission/ETERNAL_SUBMISSION_EN.md`
+- 180s pitch script: `docs/submission/PITCH_180S_EN.md`
