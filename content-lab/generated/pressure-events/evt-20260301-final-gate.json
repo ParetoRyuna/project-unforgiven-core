@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "entry_type": "pressure_event",
+  "id": "evt-20260301-final-gate",
+  "slug": "evt-20260301-final-gate",
+  "title": "Final Gate: 倒计时抢占",
+  "subtitle": "Pressure Simulation / Window + Queue + Retry",
+  "description": "倒计时结束后窗口打开。你需要在合适时机点击，避免无意义狂点，系统会记录你的高压行为摘要并给出 Shadow 结算。",
+  "countdown_ms": 8000,
+  "slot_limit": 12,
+  "queue_window_ms": 3000,
+  "click_window_good_ms": 1200,
+  "consent_hint": "继续即表示同意记录交互摘要（Shadow Mode，仅用于评分校准，不拦截）。"
+}

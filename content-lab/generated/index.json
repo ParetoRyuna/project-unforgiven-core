@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "updated_at": 1760000000000,
+  "entries": [
+    {
+      "entry_type": "story",
+      "id": "rogue-ai-log-ep-0001",
+      "slug": "rogue-ai-log-ep-0001",
+      "title": "失控监视日志：第一夜",
+      "summary": "一个模型开始记录你的犹豫，而不是你的命令。",
+      "status": "ready",
+      "path": "/lab/story/rogue-ai-log-ep-0001",
+      "content_label": "story",
+      "difficulty": "low"
+    },
+    {
+      "entry_type": "case",
+      "id": "case-midnight-signal",
+      "slug": "case-midnight-signal",
+      "title": "午夜信号案",
+      "summary": "三段求救信号里有一段伪造，找出它。",
+      "status": "ready",
+      "path": "/lab/case/case-midnight-signal",
+      "content_label": "case",
+      "difficulty": "medium"
+    },
+    {
+      "entry_type": "daily_log",
+      "id": "2026-02-26-first-anomaly",
+      "slug": "2026-02-26-first-anomaly",
+      "title": "今日异常日志 #001",
+      "summary": "2 分钟微型挑战，追踪异常节奏。",
+      "status": "ready",
+      "path": "/lab/daily/2026-02-26-first-anomaly",
+      "content_label": "daily_log",
+      "difficulty": "low"
+    },
+    {
+      "entry_type": "pressure_event",
+      "id": "evt-20260301-final-gate",
+      "slug": "evt-20260301-final-gate",
+      "title": "Final Gate: 倒计时抢占",
+      "summary": "开窗瞬间决定成败，重试和点击时机会被评分。",
+      "status": "ready",
+      "path": "/lab/pressure/evt-20260301-final-gate",
+      "content_label": "pressure_event",
+      "difficulty": "high"
+    }
+  ]
+}

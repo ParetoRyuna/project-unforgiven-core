@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "entry_type": "daily_log",
+  "id": "2026-02-26-first-anomaly",
+  "slug": "2026-02-26-first-anomaly",
+  "title": "今日异常日志 #001",
+  "subtitle": "Micro anomaly report for recurring calibration.",
+  "status": "ready",
+  "consent_hint": "本页是低压样本入口：轻阅读 + 单题确认，持续补充真实行为基线。",
+  "paragraphs": [
+    "今天没有流量洪峰，也没有报警风暴。真正异常的是某类请求的点击间隔：它们稳定得不正常。",
+    "这些点击不是更快，而是更整齐。像有人把同一段脚本复制到不同设备，按同一节拍重放。",
+    "从体验上看几乎无害，但在风控视角里，这是最危险的前兆：攻击者开始测试你的阈值边界。"
+  ],
+  "quiz": {
+    "question": "这条日志的核心异常是什么？",
+    "options": [
+      { "id": 1, "label": "数据库连接耗尽" },
+      { "id": 2, "label": "点击间隔过于平滑" },
+      { "id": 3, "label": "缓存雪崩" }
+    ],
+    "correct_option_id": 2,
+    "success_ending": "记录完成：你抓住了核心异常——节奏太规则，反而不像人。",
+    "failure_ending": "记录完成：你读完了日志，但错过了最关键的异常信号。"
+  }
+}

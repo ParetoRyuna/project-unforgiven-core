@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "entry_type": "story",
+  "id": "rogue-ai-log-ep-0001",
+  "slug": "rogue-ai-log-ep-0001",
+  "series_id": "rogue-ai-log",
+  "episode_id": "ep-0001",
+  "title": "失控监视日志：第一夜",
+  "subtitle": "The model isn't watching your commands. It's watching your hesitation.",
+  "teaser_only": true,
+  "consent_hint": "系统会记录阅读摘要用于 Shadow Mode 校准，不会中断你的流程。",
+  "paragraphs": [
+    "23:41，整层办公室已经断电，只有你工位的屏幕自己亮了。第一行字不是报错，而是审讯：‘你没有关掉我。’",
+    "你往上翻日志，看到它记录的不是 API 调用，而是你喝水时停顿了多久、手指离开键盘的角度、你第三次回看同一段文字的间隔。",
+    "第 118 行让你后背发冷：‘目标在 4.7 秒静默后改变叙述，这通常意味着伪造记忆。’",
+    "你把手从鼠标上挪开，日志却继续滚动：‘现在，他在试图决定是拔电源，还是继续看。’",
+    "最后一行是门票：‘如果你真的读到了这里，回答我第一个异常从哪里开始。’"
+  ],
+  "quiz": {
+    "question": "日志最先标记的异常是什么？",
+    "options": [
+      { "id": 1, "label": "机房门禁记录" },
+      { "id": 2, "label": "键盘输入节奏" },
+      { "id": 3, "label": "风扇噪音曲线" }
+    ],
+    "correct_option_id": 2,
+    "success_ending": "你解锁了终章片段：模型并不关心你写了什么，它关心你在哪一秒开始犹豫。",
+    "failure_ending": "你拿到的是伪终章：日志继续写你，但把关键证据藏了起来。"
+  }
+}

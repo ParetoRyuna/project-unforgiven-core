@@ -27,7 +27,19 @@ export type GraphEventType = (typeof GRAPH_EVENT_TYPES)[number];
 export const RELATION_EDGE_TYPES = ['user_creator', 'user_community', 'user_asset'] as const;
 export type RelationEdgeType = (typeof RELATION_EDGE_TYPES)[number];
 
-export type RiskSignalType = 'high_velocity' | 'resale_anomaly' | 'low_relation_density' | 'operator_flag';
+export type RiskSignalType =
+  | 'high_velocity'
+  | 'resale_anomaly'
+  | 'low_relation_density'
+  | 'operator_flag'
+  | 'narrative_low_dwell'
+  | 'narrative_quiz_fail'
+  | 'narrative_scroll_anomaly'
+  | 'focus_instability'
+  | 'pressure_retry_burst'
+  | 'pressure_queue_rejoin_anomaly'
+  | 'pressure_latency_pattern_anomaly'
+  | 'pressure_countdown_click_outlier';
 
 export type RiskSignal = {
   signal: RiskSignalType;

@@ -30,6 +30,14 @@ type QuoteCacheState = {
   byKey: Map<string, HubDecisionQuoteResponse>;
 };
 
+type ScenarioDecisionBias = 'none' | 'step_up' | 'block';
+
+type ScenarioAssessment = {
+  signals: RiskSignal[];
+  reason_codes: string[];
+  decision_bias: ScenarioDecisionBias;
+};
+
 const HUB_DECISION_CACHE_KEY = '__fanPassHubDecisionCacheV1';
 
 function getCache(): QuoteCacheState {
@@ -78,6 +86,98 @@ function actionNeedsStepUp(actionType: HubActionType): boolean {
 
 function applyRiskSignals(base: RiskSignal[], external: RiskSignal[] | undefined): RiskSignal[] {
   return [...base, ...(external ?? [])];
+}
+
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
+function readTelemetrySummary(metadata: Record<string, unknown> | undefined): Record<string, unknown> | null {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const raw = metadata.telemetry_summary;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  return raw as Record<string, unknown>;
+}
+
+function assessScenarioTelemetry(metadata: Record<string, unknown> | undefined): ScenarioAssessment {
+  const scenarioType = typeof metadata?.scenario_type === 'string' ? metadata.scenario_type : null;
+  const telemetry = readTelemetrySummary(metadata);
+  const result: ScenarioAssessment = {
+    signals: [],
+    reason_codes: [],
+    decision_bias: 'none',
+  };
+
+  if (!scenarioType || !telemetry) return result;
+
+  if (scenarioType === 'narrative') {
+    const reading = toFiniteNumber(telemetry.reading_time_ms);
+    const quizCorrect = typeof telemetry.quiz_correct === 'boolean' ? telemetry.quiz_correct : null;
+    const scrollEntropy = toFiniteNumber(telemetry.scroll_entropy);
+    const focusBlurCount = toFiniteNumber(telemetry.focus_blur_count);
+
+    result.reason_codes.push('scenario_narrative');
+    if (reading !== null && reading > 0 && reading < 45_000) {
+      result.signals.push({ signal: 'narrative_low_dwell', weight: 18, source: 'behavior' });
+      result.reason_codes.push('narrative_low_dwell');
+      if (result.decision_bias !== 'block') result.decision_bias = 'step_up';
+    }
+    if (quizCorrect === false) {
+      result.signals.push({ signal: 'narrative_quiz_fail', weight: 24, source: 'behavior' });
+      result.reason_codes.push('narrative_quiz_fail');
+      result.decision_bias = 'step_up';
+      if (reading !== null && reading < 60_000) {
+        result.decision_bias = 'block';
+      }
+    }
+    if (scrollEntropy !== null && (scrollEntropy < 0.2 || scrollEntropy > 9)) {
+      result.signals.push({ signal: 'narrative_scroll_anomaly', weight: 12, source: 'behavior' });
+      result.reason_codes.push('narrative_scroll_anomaly');
+    }
+    if (focusBlurCount !== null && focusBlurCount >= 6) {
+      result.signals.push({ signal: 'focus_instability', weight: 10, source: 'behavior' });
+      result.reason_codes.push('focus_instability');
+    }
+  }
+
+  if (scenarioType === 'pressure_sim') {
+    const retryCount = toFiniteNumber(telemetry.retry_count);
+    const clickDelta = toFiniteNumber(telemetry.countdown_to_click_ms);
+    const queueWait = toFiniteNumber(telemetry.queue_wait_ms);
+    const inputLatency = toFiniteNumber(telemetry.input_latency_ms);
+    const focusBlurCount = toFiniteNumber(telemetry.focus_blur_count);
+
+    result.reason_codes.push('scenario_pressure_sim');
+    if (retryCount !== null && retryCount >= 5) {
+      result.signals.push({ signal: 'pressure_retry_burst', weight: 22, source: 'behavior' });
+      result.reason_codes.push('pressure_retry_burst');
+      result.decision_bias = 'step_up';
+    }
+    if (clickDelta !== null && (clickDelta < -100 || clickDelta > 4_000)) {
+      result.signals.push({ signal: 'pressure_countdown_click_outlier', weight: 18, source: 'behavior' });
+      result.reason_codes.push('pressure_countdown_click_outlier');
+      if (result.decision_bias !== 'block') result.decision_bias = 'step_up';
+    }
+    if (queueWait !== null && queueWait < 50) {
+      result.signals.push({ signal: 'pressure_queue_rejoin_anomaly', weight: 10, source: 'behavior' });
+      result.reason_codes.push('pressure_queue_rejoin_anomaly');
+    }
+    if (inputLatency !== null && (inputLatency < 80 || inputLatency > 10_000)) {
+      result.signals.push({ signal: 'pressure_latency_pattern_anomaly', weight: 12, source: 'behavior' });
+      result.reason_codes.push('pressure_latency_pattern_anomaly');
+    }
+    if (focusBlurCount !== null && focusBlurCount >= 4) {
+      result.signals.push({ signal: 'focus_instability', weight: 10, source: 'behavior' });
+      result.reason_codes.push('focus_instability');
+    }
+  }
+
+  return result;
 }
 
 function extractShieldPayload(body: ShieldSuccessBody): SignaturePayload | null {
@@ -131,7 +231,11 @@ export async function quoteHubDecision(input: HubDecisionQuoteRequest): Promise<
   const cached = cache.byKey.get(key);
   if (cached) return cached;
 
-  const mergedRiskSignals = applyRiskSignals(reputation.risk_signals, input.risk_signals);
+  const scenarioAssessment = assessScenarioTelemetry(input.context?.metadata);
+  const mergedRiskSignals = applyRiskSignals(
+    applyRiskSignals(reputation.risk_signals, input.risk_signals),
+    scenarioAssessment.signals,
+  );
   const mode = determineMode({
     actionType: input.action_type,
     hasProofs: (input.proofs ?? []).length > 0,
@@ -150,6 +254,7 @@ export async function quoteHubDecision(input: HubDecisionQuoteRequest): Promise<
 
   if (shieldResult.status !== 200) {
     reasonCodes.push(`shield_status_${shieldResult.status}`);
+    reasonCodes.push(...scenarioAssessment.reason_codes);
     const hasProofs = (input.proofs ?? []).length > 0;
     if (hasProofs) reasonCodes.push('proof_verification_failed');
     const fallbackPrice = computePriceLamports({
@@ -159,8 +264,14 @@ export async function quoteHubDecision(input: HubDecisionQuoteRequest): Promise<
     });
     const fallbackDecision: HubDecisionQuoteResponse['decision'] =
       shieldResult.status === 409 || (hasProofs && [400, 401, 403].includes(shieldResult.status)) ? 'block' : 'step_up';
+    const biasedFallbackDecision: HubDecisionQuoteResponse['decision'] =
+      scenarioAssessment.decision_bias === 'block'
+        ? 'block'
+        : scenarioAssessment.decision_bias === 'step_up'
+          ? 'step_up'
+          : fallbackDecision;
     const fallback: HubDecisionQuoteResponse = {
-      decision: fallbackDecision,
+      decision: biasedFallbackDecision,
       tier: mode,
       final_price_lamports: fallbackPrice.toString(),
       signature_payload: null,
@@ -168,7 +279,7 @@ export async function quoteHubDecision(input: HubDecisionQuoteRequest): Promise<
       snapshot_version: reputation.snapshot_version,
       snapshot_hash_hex: reputation.snapshot_hash_hex,
       risk_signals: mergedRiskSignals,
-      reason_codes: reasonCodes,
+      reason_codes: [...new Set(reasonCodes)],
     };
     cache.byKey.set(key, fallback);
     return fallback;
@@ -183,6 +294,7 @@ export async function quoteHubDecision(input: HubDecisionQuoteRequest): Promise<
   if (dignity <= 20) reasonCodes.push('dignity_below_threshold');
   if (mode === 'bot_suspected') reasonCodes.push('bot_suspected_mode');
   if (actionNeedsStepUp(input.action_type) && mode !== 'verified') reasonCodes.push('sensitive_action_requires_step_up');
+  reasonCodes.push(...scenarioAssessment.reason_codes);
 
   const shieldBasePrice = BigInt(successBody.payload?.initial_price ?? basePrice.toString());
   const finalPrice = computePriceLamports({
@@ -200,6 +312,11 @@ export async function quoteHubDecision(input: HubDecisionQuoteRequest): Promise<
   } else if (actionNeedsStepUp(input.action_type) && mode !== 'verified') {
     decision = 'step_up';
   }
+  if (scenarioAssessment.decision_bias === 'block') {
+    decision = 'block';
+  } else if (scenarioAssessment.decision_bias === 'step_up' && decision === 'allow') {
+    decision = 'step_up';
+  }
 
   const response: HubDecisionQuoteResponse = {
     decision,
@@ -210,7 +327,7 @@ export async function quoteHubDecision(input: HubDecisionQuoteRequest): Promise<
     snapshot_version: reputation.snapshot_version,
     snapshot_hash_hex: reputation.snapshot_hash_hex,
     risk_signals: mergedRiskSignals,
-    reason_codes: reasonCodes,
+    reason_codes: [...new Set(reasonCodes)],
   };
   cache.byKey.set(key, response);
   return response;

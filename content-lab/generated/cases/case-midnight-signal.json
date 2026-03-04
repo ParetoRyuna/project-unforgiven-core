@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "entry_type": "case",
+  "id": "case-midnight-signal",
+  "slug": "case-midnight-signal",
+  "title": "午夜信号案",
+  "subtitle": "One of the three recordings is manufactured.",
+  "status": "ready",
+  "consent_hint": "你的阅读与作答摘要会进入 Shadow Mode 评分，用于校准而非拦截。",
+  "prompt": "三段无线电录音都在求救，但只有一段是伪造。你只有一次公开判断机会。",
+  "clues": [
+    "00:13 里有说话人换气时的轻微破音，频谱不稳定但自然。",
+    "00:17 的语义最完整，反而每个停顿都像模板复制，几乎没有人类口误。",
+    "00:19 的背景噪声与塔台故障报告中的电流噪声吻合。"
+  ],
+  "quiz": {
+    "question": "哪一段最可能是伪造的？",
+    "options": [
+      { "id": 1, "label": "00:13" },
+      { "id": 2, "label": "00:17" },
+      { "id": 3, "label": "00:19" }
+    ],
+    "correct_option_id": 2,
+    "success_ending": "你命中了伪造段：它模仿了内容，却没模仿人类说错话时的粗糙感。",
+    "failure_ending": "你判断错了。伪造系统最擅长的，就是把‘太完美’伪装成‘太真实’。"
+  }
+}
