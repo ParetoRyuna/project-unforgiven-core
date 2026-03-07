@@ -1,12 +1,7 @@
-import { Bebas_Neue, Noto_Sans_SC } from 'next/font/google';
-
 import { LabEntryCard } from './components/LabEntryCard';
 import { LabShell } from './components/LabShell';
 
 import { listLabEntries } from '@/services/behavior-lab-engine/src/catalog';
-
-const bebas = Bebas_Neue({ subsets: ['latin'], weight: '400' });
-const notoSc = Noto_Sans_SC({ subsets: ['latin'], weight: ['400', '500', '700'] });
 
 export default function LabHomePage() {
   const entries = listLabEntries();
@@ -19,13 +14,13 @@ export default function LabHomePage() {
 
   return (
     <LabShell title="WanWan Human Trial" subtitle="Suspense playground + behavior calibration engine.">
-      <div className={notoSc.className}>
+      <div className="font-sans">
         <section className="relative overflow-hidden rounded-2xl border border-zinc-700/70 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black p-5">
           <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-amber-500/20 blur-3xl" />
           <div className="absolute -left-16 -bottom-16 h-44 w-44 rounded-full bg-sky-500/20 blur-3xl" />
 
           <p className="text-[11px] uppercase tracking-[0.2em] text-amber-300/90">Protocol Brief</p>
-          <h2 className={`${bebas.className} mt-2 text-4xl leading-none tracking-wide text-zinc-100`}>
+          <h2 className="mt-2 text-4xl font-semibold leading-none tracking-wide text-zinc-100">
             HUMAN OR SCRIPT?
           </h2>
           <p className="mt-3 max-w-[34ch] text-sm leading-relaxed text-zinc-300">
@@ -63,7 +58,7 @@ export default function LabHomePage() {
               <section key={section.key} className="space-y-2">
                 <div className="flex items-end justify-between gap-3">
                   <div>
-                    <h3 className={`${bebas.className} text-2xl tracking-wide text-zinc-100`}>{section.title}</h3>
+                    <h3 className="text-2xl font-semibold tracking-wide text-zinc-100">{section.title}</h3>
                     <p className="text-xs text-zinc-500">{section.subtitle}</p>
                   </div>
                   <span className="text-[11px] text-zinc-500">{group.length} items</span>

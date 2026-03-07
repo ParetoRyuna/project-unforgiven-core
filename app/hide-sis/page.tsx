@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Cinzel_Decorative, Cormorant_Garamond } from "next/font/google";
 import { useWallet } from "@solana/wallet-adapter-react";
 
 import { ENDING_CODES } from "../../packages/universal-shield-sdk/src/hide_sis_types";
@@ -18,9 +17,6 @@ import { getSceneScript } from "./content/scenes";
 import { getNodeChoicePresentation } from "./content/choices";
 import type { EndingBreakdown, GameSession, QuotePayload } from "./types";
 import styles from "./hide-sis.module.css";
-
-const cinzel = Cinzel_Decorative({ subsets: ["latin"], weight: ["400", "700"] });
-const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "500", "700"] });
 
 type Mode = "verified" | "guest" | "bot_suspected";
 
@@ -172,14 +168,14 @@ export default function HideSisPage() {
   const activeEmotion = currentBeat?.emotion ?? "calm";
 
   return (
-    <div className={`${styles.page} ${cormorant.className}`}>
+    <div className={`${styles.page} font-serif`}>
       <SfxController />
 
       {!session && (
         <div className={styles.lobbyWrap}>
           <section className={styles.lobbyPanel}>
-            <p className={`${styles.eyebrow} ${cinzel.className}`}>Hide & Sis: The Silk of Secrets</p>
-            <h1 className={`${styles.lobbyTitle} ${cinzel.className}`}>Picha x Baibua</h1>
+            <p className={`${styles.eyebrow} font-semibold tracking-wide`}>Hide & Sis: The Silk of Secrets</p>
+            <h1 className={`${styles.lobbyTitle} font-semibold tracking-wide`}>Picha x Baibua</h1>
             <p className={styles.lobbyText}>视觉小说模式已启用。中文主句 + 英文副句。\nVisual novel mode enabled. CN primary + EN support.</p>
 
             <div className={styles.modeRow}>
@@ -223,7 +219,7 @@ export default function HideSisPage() {
 
             <div className="overlay-top">
               <p className="chapter-name">Chapter {session.current_node.chapter}</p>
-              <h2 className={cinzel.className}>{session.current_node.title}</h2>
+              <h2 className="font-semibold tracking-wide">{session.current_node.title}</h2>
               <p className="chapter-sub">{session.current_node.prompt}</p>
             </div>
           </VNStage>

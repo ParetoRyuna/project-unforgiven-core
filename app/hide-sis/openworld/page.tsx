@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Cinzel_Decorative, Cormorant_Garamond } from "next/font/google";
 
 import type {
   Action,
@@ -26,9 +25,6 @@ import { Journal } from "./components/Journal";
 import { DynamicScene } from "./components/DynamicScene";
 import { QuestCard } from "./components/QuestCard";
 import { ConsequenceBar } from "./components/ConsequenceBar";
-
-const cinzel = Cinzel_Decorative({ subsets: ["latin"], weight: ["400", "700"] });
-const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "500", "700"] });
 
 async function postJson<T>(url: string, body: Record<string, unknown>): Promise<T> {
   const res = await fetch(url, {
@@ -189,7 +185,7 @@ export default function HideSisOpenWorldPage() {
   };
 
   return (
-    <div className={`${styles.page} ${cormorant.className}`}>
+    <div className={`${styles.page} font-serif`}>
       <div className={styles.stage}>
         <div
           className={styles.mapLayer}
@@ -220,8 +216,8 @@ export default function HideSisOpenWorldPage() {
         <div className={styles.hud}>
           <header className={styles.worldBar}>
             <div className={styles.worldTitle}>
-              <p className={`${styles.kicker} ${cinzel.className}`}>Hide & Sis v0.3</p>
-              <h1 className={cinzel.className}>开放世界 Open World</h1>
+              <p className={`${styles.kicker} font-semibold tracking-wide`}>Hide & Sis v0.3</p>
+              <h1 className="font-semibold tracking-wide">开放世界 Open World</h1>
               <p className={styles.subline}>时间预算 · 阶段门 · 个性化终章</p>
             </div>
             <div className={styles.worldControls}>
