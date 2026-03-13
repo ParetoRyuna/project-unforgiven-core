@@ -53,24 +53,10 @@ SHIELD_API_BASE=http://127.0.0.1:3100 yarn run smoke:plugin:ticket:v2
 
 ## Core Flow
 
-```mermaid
-sequenceDiagram
-  participant "User / Bot" as U
-  participant "App / Plugin" as A
-  participant "Shield API" as S
-  participant "Solana Client" as C
-  participant "UNFORGIVEN v2 Program" as P
-  participant "Sentinel" as T
-
-  U->>A: Launch action (buy / claim / unlock)
-  A->>S: Request shield quote + signed payload
-  S-->>A: payload + oracle signature + decision inputs
-  A->>C: Build tx [Ed25519 verify, preview/execute]
-  C->>P: Submit transaction
-  P->>P: Verify prior Ed25519 instruction + policy checks
-  P-->>C: Emit preview/execute event
-  T->>T: Observe burst patterns / governance response
-```
+1. User action enters an app or plugin flow such as `buy`, `claim`, or `unlock`.
+2. The app requests a Shield quote and receives `payload_hex`, `oracle_signature_hex`, and `oracle_pubkey`.
+3. The client builds a two-instruction Solana transaction: `Ed25519 verify` plus `preview/execute`.
+4. The on-chain program verifies the signed payload, applies fairness policy, and emits events for monitoring and governance.
 
 ## Integration Contract
 
