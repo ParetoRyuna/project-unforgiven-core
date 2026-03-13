@@ -60,7 +60,6 @@ Fan Pass Hub is the phase-1 business flow module for:
 ## Quick Smoke
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
 npm run test:hub
 npm run dev
 # open http://localhost:3000/fan-pass

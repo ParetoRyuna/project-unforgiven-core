@@ -77,7 +77,6 @@ Plugin decision log keys:
 
 ## 7) Week 2 Evidence Commands
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
 npm run test:scripts:v2
 npm run test:plugin:ticket
 SHIELD_API_BASE=http://127.0.0.1:3100 npm run smoke:plugin:ticket:v2

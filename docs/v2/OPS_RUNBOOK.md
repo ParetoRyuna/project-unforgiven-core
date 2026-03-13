@@ -11,16 +11,16 @@ Use this runbook for:
 - troubleshooting local demo runs
 
 Primary v2 components:
-- Program: `/Users/lenovo/Desktop/HACKTHON PROJECT/programs/unforgiven_v2`
-- Shield API: `/Users/lenovo/Desktop/HACKTHON PROJECT/app/api/shield-score/route.ts`
-- Sentinel: `/Users/lenovo/Desktop/HACKTHON PROJECT/crates/sentinel`
+- Program: `programs/unforgiven_v2`
+- Shield API: `app/api/shield-score/route.ts`
+- Sentinel: `crates/sentinel`
 
 ## Quick Start (Full Demo Stack)
 
 ### One-command demo (recommended)
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+cd <repo-root>
 bash scripts/demo_v2.sh 40
 ```
 
@@ -33,14 +33,14 @@ This starts:
 ### Shutdown
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+cd <repo-root>
 bash scripts/down_v2.sh --clean-ledger
 ```
 
 ### Status
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+cd <repo-root>
 bash scripts/status_v2.sh
 ```
 
@@ -49,7 +49,7 @@ bash scripts/status_v2.sh
 ### Single acceptance command
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+cd <repo-root>
 npm run gate:all
 ```
 
@@ -83,7 +83,7 @@ Key stable schema fields:
 ## 3-Minute Judge Demo Script (Ops View)
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+cd <repo-root>
 npm run up:v2
 NODE_NO_WARNINGS=1 SHIELD_API_BASE=http://127.0.0.1:3100 node ./scripts/burst_preview_v2.js 40
 NODE_NO_WARNINGS=1 SHIELD_API_BASE=http://127.0.0.1:3100 node ./scripts/reset_admin_v2.js
@@ -99,16 +99,16 @@ Notes:
 ### Production-like sentinel thresholds
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+cd <repo-root>
 SENTINEL_CONFIG=configs/sentinel_config_v2.toml bash scripts/up_v2.sh
 ```
 
 ### Production-like startup + strict Oracle key
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+cd <repo-root>
 npm run oracle:keygen:v2
-export ORACLE_KEYPAIR_PATH="/Users/lenovo/Desktop/HACKTHON PROJECT/.keys/oracle-v2.json"
+export ORACLE_KEYPAIR_PATH="<repo-root>/.keys/oracle-v2.json"
 export ORACLE_REQUIRE_STATIC_KEY=1
 npm run up:v2:prod
 ```
@@ -116,7 +116,7 @@ npm run up:v2:prod
 ### Sentinel manual run (debug logs)
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+cd <repo-root>
 RUST_LOG=sentinel_service_v2=debug cargo run -p sentinel-service-v2 -- configs/sentinel_config_v2.toml
 ```
 
@@ -125,20 +125,20 @@ RUST_LOG=sentinel_service_v2=debug cargo run -p sentinel-service-v2 -- configs/s
 ### v2 one-liner trigger (quick preview)
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT" && (lsof -ti tcp:3100 >/dev/null || (npm run dev -- -p 3100 >/tmp/wanwan-dev-3100.log 2>&1 &)) && for i in $(seq 1 40); do curl -s http://127.0.0.1:3100/api/oracle-pubkey | grep -q 'oraclePubkey' && break; sleep 1; done && out="$(SHIELD_API_BASE=http://127.0.0.1:3100 node ./scripts/trigger_preview_v2.js 2>&1)"; echo "$out"; tx="$(printf '%s\n' "$out" | sed -n 's/^previewPrice tx: //p' | tail -1)"; [ -n "$tx" ] && solana confirm -v "$tx" --url http://127.0.0.1:8899 || echo "未提取到 previewPrice tx（看 /tmp/wanwan-dev-3100.log）"
+cd <repo-root> && (lsof -ti tcp:3100 >/dev/null || (npm run dev -- -p 3100 >/tmp/wanwan-dev-3100.log 2>&1 &)) && for i in $(seq 1 40); do curl -s http://127.0.0.1:3100/api/oracle-pubkey | grep -q 'oraclePubkey' && break; sleep 1; done && out="$(SHIELD_API_BASE=http://127.0.0.1:3100 node ./scripts/trigger_preview_v2.js 2>&1)"; echo "$out"; tx="$(printf '%s\n' "$out" | sed -n 's/^previewPrice tx: //p' | tail -1)"; [ -n "$tx" ] && solana confirm -v "$tx" --url http://127.0.0.1:8899 || echo "未提取到 previewPrice tx（看 /tmp/wanwan-dev-3100.log）"
 ```
 
 ### Admin guardrail reset
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+cd <repo-root>
 SHIELD_API_BASE=http://127.0.0.1:3100 node ./scripts/reset_admin_v2.js
 ```
 
 ### Ops smoke directly
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+cd <repo-root>
 bash scripts/ops_smoke_v2.sh 40
 ```
 
@@ -253,14 +253,14 @@ grep -E 'attack assessment triggered|governance action submitted|admin_config ac
 ### Monitoring quick check
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+cd <repo-root>
 npm run alerts:v2
 ```
 
 ## Safety / Consistency Gates (Fast Checks)
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
+cd <repo-root>
 npm run check:program-id
 npm run check:getrandom-patch
 npm run smoke:tx-builder:v2

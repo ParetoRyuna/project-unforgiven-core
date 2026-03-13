@@ -7,7 +7,7 @@ This folder contains the v2 backend logic for:
 - anti-replay unique-key checks for `(proof_hash + wallet)`.
 
 Attestation scoring logic lives in:
-- `/Users/lenovo/Desktop/HACKTHON PROJECT/services/dignity-scoring`
+- `services/dignity-scoring`
 
 Current app routes are thin wrappers:
 - `/app/api/shield-score/route.ts`

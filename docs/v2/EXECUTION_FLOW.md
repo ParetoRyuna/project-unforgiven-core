@@ -22,5 +22,5 @@ Separate read-only quote preview from one-time proof consumption.
 - This closes replay and "dignity transport" reuse on the execution path.
 
 ## Version Boundary
-- This design is **v2 only** (`/Users/lenovo/Desktop/HACKTHON PROJECT/programs/unforgiven_v2`).
-- Do not backport execution-path logic into v1 (`/Users/lenovo/Desktop/HACKTHON PROJECT/programs/unforgiven`).
+- This design is **v2 only** (`programs/unforgiven_v2`).
+- Do not backport execution-path logic into v1 (`programs/unforgiven`).

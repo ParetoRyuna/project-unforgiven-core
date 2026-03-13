@@ -21,19 +21,16 @@ The plugin always returns:
 
 ## Run (Direct)
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
 SHIELD_API_BASE=http://127.0.0.1:3100 node ./examples/anti-bot-ticket-plugin/index.js 11111111111111111111111111111111
 ```
 
 ## Run (Smoke)
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
 SHIELD_API_BASE=http://127.0.0.1:3100 npm run smoke:plugin:ticket:v2
 ```
 
 ## Test
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
 npm run test:plugin:ticket
 ```
 

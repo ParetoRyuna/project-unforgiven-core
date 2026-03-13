@@ -28,11 +28,10 @@ Current repo state includes:
 Run this exact path:
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
-npm install
-npm run ci:gate
-npm run build
-npm run dev
+yarn install --frozen-lockfile
+yarn run ci:gate
+yarn run build
+yarn run dev
 ```
 
 Then open:
@@ -46,11 +45,10 @@ Then open:
 If you want deeper technical proof quickly:
 
 ```bash
-cd "/Users/lenovo/Desktop/HACKTHON PROJECT"
-npm run test:shield:hardening
-npm run test:hub
-npm run test:plugin:ticket
-SHIELD_API_BASE=http://127.0.0.1:3100 npm run smoke:plugin:ticket:v2
+yarn run test:shield:hardening
+yarn run test:hub
+yarn run test:plugin:ticket
+SHIELD_API_BASE=http://127.0.0.1:3100 yarn run smoke:plugin:ticket:v2
 ```
 
 ## Core Flow
