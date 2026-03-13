@@ -16,7 +16,7 @@ jobs:
           HUB_DAILY_ANCHOR_TOKEN: ${{ secrets.HUB_DAILY_ANCHOR_TOKEN }}
         run: |
           if [ -z "${HUB_DAILY_ANCHOR_URL}" ] || [ -z "${HUB_DAILY_ANCHOR_TOKEN}" ]; then
-            echo "Missing HUB_DAILY_ANCHOR_URL or HUB_DAILY_ANCHOR_TOKEN secret"
-            exit 1
+            echo "Skipping daily anchor: HUB_DAILY_ANCHOR_URL or HUB_DAILY_ANCHOR_TOKEN secret is not configured"
+            exit 0
           fi
           bash scripts/anchor_daily_v2.sh
