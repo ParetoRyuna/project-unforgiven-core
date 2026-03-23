@@ -18,6 +18,9 @@ ANCHOR_BUILD_LOG="/tmp/wanwan-anchor-build.log"
 ANCHOR_DEPLOY_LOG="/tmp/wanwan-anchor-deploy.log"
 
 RUN_ENV="/tmp/wanwan-v2.env"
+PROVIDER_WALLET="${PROVIDER_WALLET:-${ANCHOR_WALLET:-$HOME/.config/solana/id.json}}"
+LOCAL_RPC_URL="${LOCAL_RPC_URL:-http://127.0.0.1:8899}"
+LOCAL_AIRDROP_SOL="${LOCAL_AIRDROP_SOL:-20}"
 
 HEALTH_TIMEOUT_SECS="${HEALTH_TIMEOUT_SECS:-60}"
 API_TIMEOUT_SECS="${API_TIMEOUT_SECS:-60}"
@@ -185,6 +188,15 @@ COPYFILE_DISABLE=1 _spawn_detached "$VAL_PIDFILE" "$VAL_LOG" solana-test-validat
   --reset
 _wait_health
 
+if [[ ! -f "$PROVIDER_WALLET" ]]; then
+  echo "ERROR: provider wallet not found: $PROVIDER_WALLET" >&2
+  exit 1
+fi
+
+PROVIDER_PUBKEY="$(solana-keygen pubkey "$PROVIDER_WALLET")"
+echo "[up_v2] airdropping ${LOCAL_AIRDROP_SOL} SOL to provider wallet $PROVIDER_PUBKEY"
+solana airdrop "$LOCAL_AIRDROP_SOL" "$PROVIDER_PUBKEY" --url "$LOCAL_RPC_URL" >/dev/null
+
 echo "[up_v2] building+deploying unforgiven_v2"
 anchor build -p unforgiven_v2 >"$ANCHOR_BUILD_LOG" 2>&1
 anchor deploy -p unforgiven_v2 >"$ANCHOR_DEPLOY_LOG" 2>&1
@@ -215,6 +227,8 @@ SENTINEL_CONFIG=$SENTINEL_CONFIG
 SHIELD_FREEZE=${SHIELD_FREEZE:-0}
 ORACLE_REQUIRE_STATIC_KEY=${ORACLE_REQUIRE_STATIC_KEY:-0}
 ORACLE_KEYPAIR_PATH=${ORACLE_KEYPAIR_PATH:-}
+PROVIDER_WALLET=$PROVIDER_WALLET
+PROVIDER_PUBKEY=$PROVIDER_PUBKEY
 SHIELD_RATE_WINDOW_SECS=${SHIELD_RATE_WINDOW_SECS:-60}
 SHIELD_RATE_LIMIT_PER_IP=${SHIELD_RATE_LIMIT_PER_IP:-120}
 SHIELD_RATE_LIMIT_PER_WALLET=${SHIELD_RATE_LIMIT_PER_WALLET:-60}
@@ -226,6 +240,7 @@ cat <<OUT
 - validator: pid=$VAL_PID log=$VAL_LOG ledger=$VAL_LEDGER
 - next api:  pid=$NEXT_PID log=$NEXT_LOG url=http://127.0.0.1:3100
 - sentinel:  pid=$SEN_PID log=$SEN_LOG config=$SENTINEL_CONFIG
+- provider:  $PROVIDER_PUBKEY ($PROVIDER_WALLET)
 - anchor build log:  $ANCHOR_BUILD_LOG
 - anchor deploy log: $ANCHOR_DEPLOY_LOG
 - run metadata:      $RUN_ENV

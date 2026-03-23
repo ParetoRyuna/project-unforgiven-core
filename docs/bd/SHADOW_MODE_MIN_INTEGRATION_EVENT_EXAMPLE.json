@@ -1,0 +1,41 @@
+{
+  "integration_version": "shadow-v1",
+  "mode": "observe_only",
+  "partner": {
+    "project_id": "solafast-demo",
+    "environment": "staging"
+  },
+  "event": {
+    "event_id": "evt_20260222_0001",
+    "event_type": "token_launch",
+    "route": "/api/launch/buy",
+    "timestamp_ms": 1771732805123,
+    "request_id": "req_9f3d7f7f4e2b",
+    "session_id": "sess_74dcb2e1"
+  },
+  "actor": {
+    "wallet": "9xQeWvG816bUx9EPjHmaT23yvVM6VY4XxJ4Yw8y6K7vN",
+    "wallet_hash": "sha256:9f9d9d4e0f9f8e6c2f1cf18eb5f4f4de2b7217f8f4e3ea0f3f7292f4f0f41a12",
+    "ip_hash": "sha256:0f6dd8e12f71c2bce0f1b7f5a2c0d8a2f83b37d3f6f0c1e8b2c81b4a50b8c2ce",
+    "user_agent_hash": "sha256:5196fcbf2f7c16e6a55ea1b4736ecb9cb1196be4d8ef8b9d1c251fd6e9fd8c4d"
+  },
+  "execution_context": {
+    "tx_signature": "5Lz6F6pA6a4wQd9z3R8g3H3n9m5pk4w8E4r7ZXn2vZ8M4fdq8VqJotj8bK3t8PqJ4H4zj1rF9x1X2xkXoL5f5E3",
+    "status": "success",
+    "amount": "1000000000",
+    "amount_unit": "lamports",
+    "mint": "So11111111111111111111111111111111111111112",
+    "chain": "solana",
+    "cluster": "devnet"
+  },
+  "signals": {
+    "attestations_present": false,
+    "wallet_age_days": null,
+    "referrer": "launch-page",
+    "captcha_result": "unknown"
+  },
+  "partner_labels": {
+    "campaign_id": "launch_feb_week4",
+    "cohort": "public"
+  }
+}

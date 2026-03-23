@@ -1,0 +1,8 @@
+id: evt-20260301-final-gate
+title: Final Gate - 限时终章名额
+status: ready
+start_at: 2026-03-01T20:00:00+08:00
+countdown_ms: 8000
+slot_limit: 12
+queue_window_ms: 3000
+click_window_good_ms: 1200

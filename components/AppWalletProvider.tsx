@@ -21,8 +21,17 @@ export default function AppWalletProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const network = WalletAdapterNetwork.Devnet;
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  const network = useMemo(() => {
+    const configured = process.env.NEXT_PUBLIC_SOLANA_CLUSTER?.toLowerCase();
+    if (configured === "mainnet-beta") return WalletAdapterNetwork.Mainnet;
+    if (configured === "testnet") return WalletAdapterNetwork.Testnet;
+    return WalletAdapterNetwork.Devnet;
+  }, []);
+
+  const endpoint = useMemo(() => {
+    const explicit = process.env.NEXT_PUBLIC_SOLANA_RPC_URL?.trim();
+    return explicit && explicit.length > 0 ? explicit : clusterApiUrl(network);
+  }, [network]);
 
   const wallets = useMemo(
     () => [new PhantomWalletAdapter(), new SolflareWalletAdapter()],

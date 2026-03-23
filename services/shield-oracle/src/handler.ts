@@ -77,6 +77,16 @@ export function getOraclePubkeyPayload(): { oraclePubkey: string } {
   return { oraclePubkey: oraclePubkeyBase58() };
 }
 
+export function getShieldRuntimeConfigPayload(): {
+  oraclePubkey: string;
+  scoringModelHashHex: string;
+} {
+  return {
+    oraclePubkey: oraclePubkeyBase58(),
+    scoringModelHashHex: toHex(Uint8Array.from(SCORING_MODEL_HASH)),
+  };
+}
+
 export async function handleShieldScoreRequest(body: ShieldScoreBody): Promise<ShieldScoreResult> {
   try {
     if (!body.wallet) {

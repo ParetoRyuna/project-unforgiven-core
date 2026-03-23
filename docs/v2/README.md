@@ -6,5 +6,7 @@
 - Execute/Preview split: `EXECUTION_FLOW.md`
 - Fan Pass Hub week-1 delivery: `FAN_PASS_HUB.md`
 - Ops runbook (moved from top-level README): `OPS_RUNBOOK.md`
+- **Technical demo (Guarded Claim):** `DEMO_RUNBOOK.md`, `TECHNICAL_DEMO_SCRIPT.md`
+- Deployment state (devnet): `DEPLOYMENT_STATE.md`
 - Backend service split: `../VERSION_MAP.md` (`services/shield-oracle` + `services/dignity-scoring`)
 - Global version map: `../VERSION_MAP.md`

@@ -1,0 +1,16 @@
+id: case-midnight-signal
+version: v001
+title: 午夜信号案
+difficulty: easy
+status: draft
+prompt: |
+  一段无线电录音在 00:13、00:17、00:19 重复出现。你需要判断哪一次是伪造的。
+choices:
+  - id: 1
+    label: 00:13
+  - id: 2
+    label: 00:17
+  - id: 3
+    label: 00:19
+answer:
+  correct_choice_id: 2

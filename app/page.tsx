@@ -5,11 +5,8 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useUnforgivenProgram } from '@/hooks/useUnforgivenProgram';
-import { useBuyTicket } from '@/hooks/useBuyTicket';
-import { useConnection } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
-import { BN } from '@coral-xyz/anchor';
-import { calculateVrgdaPrice } from '@/app/utils/vrgda';
+import { useShieldFlow } from '@/hooks/useShieldFlow';
+import { useTicketPortfolio } from '@/hooks/useTicketPortfolio';
 import InitializeButton from '@/components/InitializeButton';
 import IdentityVerifier from '@/components/IdentityVerifier';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,11 +15,15 @@ import { motion, tapScale } from '@/components/ui/motion';
 import { Loader2, LogOut } from 'lucide-react';
 import { TicketCard } from '@/components/ui/ticket-card';
 import TicketWallet from '@/components/TicketWallet';
+import TicketMarketplace from '@/components/TicketMarketplace';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SimulationPanel } from '@/components/SimulationPanel';
-import JCurveChart from '@/components/JCurveChart';
 import PriceTicker from '@/components/PriceTicker';
 import { cn } from '@/lib/utils';
+import {
+  lamportsToSol,
+  normalizeSignedProofPayload,
+  type ShieldMode,
+} from '@/lib/unforgiven-v2-client';
 
 const EVENT = {
   name: "2026 LE SSERAFIM TOUR 'FLAME RISES' IN HONG KONG",
@@ -30,8 +31,6 @@ const EVENT = {
   date: 'Saturday, Oct 02, 2026 • 19:00',
   posterUrl: '/posters/lesserafim-unforgiven.png',
 } as const;
-
-const LIVE_QUEUE_AHEAD = 14_392;
 
 const WalletMultiButton = dynamic(
   () =>
@@ -45,16 +44,7 @@ const WalletDisconnectButton = dynamic(
   { ssr: false }
 );
 
-const LAMPORTS_PER_SOL = new BN(1_000_000_000);
-const STATE_REFRESH_MS = 5_000;
 const DEFAULT_SOL = 1.0;
-const DEMO_ITEMS_SOLD_TIER3 = '8888';
-const TARGET_SALES_PER_HOUR = 500;
-const TICKET_STORAGE_PREFIX = 'unforgiven:ticket:';
-
-function lamportsToSol(lamports: BN): number {
-  return Number(lamports.toString()) / LAMPORTS_PER_SOL.toNumber();
-}
 
 const stagger = {
   animate: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
@@ -117,67 +107,34 @@ export default function Home() {
   const wallet = useWallet();
   const { publicKey, connected } = wallet;
   const [showDebug, setShowDebug] = useState(false);
-  const { connection } = useConnection();
   const { program, programId } = useUnforgivenProgram();
-  const [currentTier, setCurrentTier] = useState<1 | 2 | 3 | null>(null);
-  const { buyTicket, loading: buyLoading, error: buyError } = useBuyTicket();
   const [proofData, setProofData] = useState<unknown>(null);
-  const [scalperMode, setScalperMode] = useState(false);
   const [nowSec, setNowSec] = useState(0);
-  const [hasTicket, setHasTicket] = useState(false);
   const walletKey = publicKey?.toBase58() ?? null;
-
-  const handleSetTier = useCallback((tier: 1 | 2 | 3 | null) => {
-    setCurrentTier(tier);
-    if (tier === 2 || tier === 3) setProofData(null);
-  }, []);
-
-  const [globalState, setGlobalState] = useState<{
-    basePrice: BN;
-    targetRateBps: BN;
-    startTime: BN;
-    itemsSold: BN;
-  } | null>(null);
-  const [stateLoading, setStateLoading] = useState(false);
-  const [stateError, setStateError] = useState<string | null>(null);
-  const [simulatedSold, setSimulatedSold] = useState<number | null>(null);
-  const [simulatedTime, setSimulatedTime] = useState<number | null>(null);
-
-  const refreshGlobalState = useCallback(async () => {
-    if (!program) return;
-    setStateLoading(true);
-    try {
-      const [globalStatePda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('global')],
-        program.programId
-      );
-      const account = await (
-        program.account as unknown as {
-          globalState: { fetch: (pubkey: PublicKey) => Promise<Record<string, unknown>> };
-        }
-      ).globalState.fetch(globalStatePda);
-      setGlobalState({
-        basePrice: account.basePrice as BN,
-        targetRateBps: account.targetRateBps as BN,
-        startTime: account.startTime as BN,
-        itemsSold: account.itemsSold as BN,
-      });
-      setStateError(null);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to fetch global state';
-      setGlobalState(null);
-      setStateError(msg);
-    } finally {
-      setStateLoading(false);
-    }
-  }, [program]);
-
-  useEffect(() => {
-    if (!program) return;
-    refreshGlobalState();
-    const interval = setInterval(refreshGlobalState, STATE_REFRESH_MS);
-    return () => clearInterval(interval);
-  }, [program, refreshGlobalState]);
+  const signedProofs = normalizeSignedProofPayload(proofData);
+  const desiredMode: ShieldMode = signedProofs.length > 0 ? 'verified' : 'guest';
+  const {
+    quote,
+    quoteLoading,
+    executeLoading,
+    error,
+    verificationWarning,
+    protocolState,
+    lastTxSignature,
+    lastExecutionEvent,
+    refreshQuote,
+    executeShield,
+  } = useShieldFlow(programId);
+  const {
+    ownedTickets,
+    marketListings,
+    actionMint,
+    error: ticketError,
+    refresh: refreshPortfolio,
+    listTicket,
+    cancelListing,
+    buyListing,
+  } = useTicketPortfolio(programId);
 
   useEffect(() => {
     setNowSec(Math.floor(Date.now() / 1000));
@@ -186,152 +143,70 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!walletKey) {
-      setHasTicket(false);
-      return;
-    }
-    try {
-      const stored = window.localStorage.getItem(`${TICKET_STORAGE_PREFIX}${walletKey}`);
-      setHasTicket(stored === '1');
-    } catch {
-      setHasTicket(false);
-    }
-  }, [walletKey]);
+    if (!wallet.publicKey) return;
+    refreshQuote(desiredMode, proofData);
+    const interval = setInterval(() => {
+      refreshQuote(desiredMode, proofData);
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [desiredMode, proofData, refreshQuote, wallet.publicKey]);
 
-  useEffect(() => {
-    if (!walletKey) return;
-    try {
-      const storageKey = `${TICKET_STORAGE_PREFIX}${walletKey}`;
-      if (hasTicket) {
-        window.localStorage.setItem(storageKey, '1');
-      } else {
-        window.localStorage.removeItem(storageKey);
-      }
-    } catch {
-      // Ignore storage errors (privacy mode, quota, etc.).
-    }
-  }, [hasTicket, walletKey]);
-
-  const isFan = !!proofData;
-  const tierLevel = currentTier !== null ? currentTier : (isFan ? 1 : scalperMode ? 3 : 2);
-  const tierBadgeLabel =
-    tierLevel === 1 ? 'Tier 1: Verified Fan' : tierLevel === 2 ? 'Tier 2: Guest' : 'Tier 3: High Risk Strategy Active';
-  const defaultBaseLamports = new BN(1_000_000_000);
-  const faceValueLamports =
-    tierLevel === 3
-      ? defaultBaseLamports
-      : globalState?.basePrice ?? defaultBaseLamports;
-  const vrgdaQuote = faceValueLamports
-    ? calculateVrgdaPrice({
-        basePrice: faceValueLamports,
-        targetRateBps: globalState?.targetRateBps ?? new BN(0),
-        startTime: globalState?.startTime ?? new BN(0),
-        itemsSold: tierLevel === 3 ? new BN(0) : (globalState?.itemsSold ?? new BN(0)),
-        tierLevel,
-        now: new BN(nowSec),
-        customSold: simulatedSold,
-        customTimeElapsedHours: simulatedTime,
-      })
-    : null;
-  const depositLamports = vrgdaQuote?.deposit ?? new BN(0);
-  const faceValueSol = faceValueLamports ? lamportsToSol(faceValueLamports) : 0;
-  const depositSol = lamportsToSol(depositLamports);
-  const itemsSoldDisplay =
-    tierLevel === 3
-      ? DEMO_ITEMS_SOLD_TIER3
-      : simulatedSold != null
-        ? String(simulatedSold)
-        : globalState
-          ? globalState.itemsSold.toString()
-          : '0';
-  const currentSales =
-    simulatedSold != null
-      ? simulatedSold
-      : globalState
-        ? Number(globalState.itemsSold.toString())
-        : 0;
-  const chainSales = globalState ? Number(globalState.itemsSold.toString()) : 0;
-  const timeElapsedHours =
-    simulatedTime != null
-      ? simulatedTime
-      : globalState
-        ? Math.max(0, (nowSec - Number(globalState.startTime.toString())) / 3600)
-        : 0;
-  const targetSales = timeElapsedHours * TARGET_SALES_PER_HOUR;
-  const simulationActive = simulatedSold !== null || simulatedTime !== null;
-  const baselineQuote =
-    simulationActive && faceValueLamports && (tierLevel === 2 || tierLevel === 3) && globalState
-      ? calculateVrgdaPrice({
-          basePrice: faceValueLamports,
-          targetRateBps: globalState.targetRateBps,
-          startTime: globalState.startTime,
-          itemsSold: tierLevel === 3 ? new BN(0) : globalState.itemsSold,
-          tierLevel,
-          now: new BN(nowSec),
-          customSold: 0,
-          customTimeElapsedHours: 0,
-        })
-      : null;
-  const baselineTotalSol =
-    baselineQuote != null ? faceValueSol + lamportsToSol(baselineQuote.deposit) : 0;
-  const currentTotalSol = faceValueSol + depositSol;
-  const totalVariant =
-    simulationActive && baselineQuote != null && (tierLevel === 2 || tierLevel === 3)
-      ? currentTotalSol > baselineTotalSol
-        ? 'high'
-        : currentTotalSol < baselineTotalSol
-          ? 'low'
-          : null
-      : null;
-  const depositLabel = depositSol === 0 ? 'Waived for Verified Fan' : 'High Risk Surcharge';
-  const auctionNotStarted =
-    !!stateError &&
-    /account.*not|does not exist|not found|was not found/i.test(stateError);
+  const tierLevel = desiredMode === 'verified' ? 1 : 2;
+  const tierBadgeLabel = tierLevel === 1 ? 'Tier 1: Verified Fan' : 'Tier 2: Guest';
+  const faceValueSol = quote ? lamportsToSol(quote.initialPriceLamports) : DEFAULT_SOL;
+  const depositSol = quote ? lamportsToSol(quote.surchargeLamports) : 0;
+  const currentTotalSol = quote ? lamportsToSol(quote.finalPriceLamports) : DEFAULT_SOL;
+  const totalVariant = tierLevel === 1 && depositSol === 0 ? 'low' : null;
+  const depositLabel =
+    tierLevel === 1 ? 'Loyalty discount applied' : 'Guest demand premium';
+  const quoteExpiresInSec = quote ? Math.max(0, Number(quote.attestationExpiry) - nowSec) : null;
+  const quoteNotReady = !quote && quoteLoading;
+  const protocolMissingAdmin = !!protocolState && !protocolState.adminConfigExists;
+  const protocolMissingGlobal = !!protocolState && !protocolState.globalConfigExists;
+  const ownsTicket = ownedTickets.length > 0;
+  const visibleListings = marketListings.filter((listing) => listing.seller.toBase58() !== walletKey);
+  const stateError = error;
   const animatedDepositRef = useRef(0);
   const [animatedDeposit, setAnimatedDeposit] = useState(0);
 
-  const isBuying = buyLoading;
-
   const handleBuyTicket = useCallback(async () => {
-    console.log('👆 Buy button clicked');
-
     if (!wallet.publicKey) {
       return alert('钱包已断开，请重新连接或刷新页面后再试。');
     }
 
-    if (!program) {
-      return alert('系统正在连接 Solana 节点，请稍等 2 秒后再次点击！');
+    if (!quote) {
+      return alert('Shield quote 尚未准备好，请稍等片刻再试。');
     }
 
     try {
-      const result = await buyTicket({
-        connection,
-        wallet,
-        program,
-        apiBaseUrl: '/api',
-      });
+      const result = await executeShield(desiredMode, proofData);
       if (result.txSignature) {
-        setHasTicket(true);
-        alert(`购票成功! TX: ${result.txSignature.slice(0, 20)}...`);
-        refreshGlobalState();
+        await Promise.all([
+          refreshQuote(desiredMode, proofData),
+          refreshPortfolio(),
+        ]);
+        const paidSol = result.event ? lamportsToSol(result.event.finalPriceLamports) : currentTotalSol;
+        alert(`购票成功! 已执行 Shield 交易并铸造链上票券。\nTX: ${result.txSignature.slice(0, 20)}...\nMint: ${result.ticketMint?.slice(0, 12) ?? 'pending'}...\nFinal Price: ${paidSol.toFixed(3)} SOL`);
       }
       if (result.error) {
         alert(result.error);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
-      console.error('👆 Buy ticket error:', err);
       alert(msg);
-      setHasTicket(false);
     }
-  }, [buyTicket, connection, program, refreshGlobalState, wallet]);
+  }, [currentTotalSol, desiredMode, executeShield, proofData, quote, refreshPortfolio, refreshQuote, wallet]);
 
-  const handleRefund = useCallback(() => {
-    setHasTicket(false);
-  }, []);
+  const loading = executeLoading;
+  const payDisabled =
+    executeLoading ||
+    quoteLoading ||
+    !quote ||
+    quote.blocked ||
+    protocolMissingAdmin ||
+    protocolMissingGlobal ||
+    ownsTicket;
 
-  const loading = isBuying;
-  const payDisabled = isBuying;
   useEffect(() => {
     const from = animatedDepositRef.current;
     const to = depositSol;
@@ -353,9 +228,13 @@ export default function Home() {
     return () => cancelAnimationFrame(frame);
   }, [depositSol]);
 
-  const pricingReady = !stateLoading && (globalState || tierLevel === 2 || tierLevel === 3);
-  const ticketHasData = pricingReady && !!vrgdaQuote;
+  const pricingReady = !!quote;
   const ticketDefaultSol = DEFAULT_SOL;
+  const quoteModeHint =
+    desiredMode === 'verified'
+      ? 'Wallet-bound Reclaim proof accepted'
+      : 'Guest path: no proof discount applied';
+  const clusterLabel = (process.env.NEXT_PUBLIC_SOLANA_CLUSTER ?? 'devnet').toUpperCase();
 
   // 门禁：仅以 publicKey 为唯一依据。无 publicKey 绝不渲染 Dashboard，避免 connected=true 但 publicKey=null 的“薛定谔状态”
   if (!wallet.publicKey) {
@@ -437,7 +316,7 @@ export default function Home() {
           <motion.div variants={itemEntrance} className="w-full">
             <Card className={cn('glass-panel overflow-hidden', 'bg-black/40 backdrop-blur-md border border-white/10 shadow-glow-burnt-sm')}>
                 <CardContent className="p-0">
-                  <IdentityVerifier onVerifySuccess={setProofData} setTier={handleSetTier} />
+                  <IdentityVerifier onVerifySuccess={setProofData} />
                 </CardContent>
             </Card>
           </motion.div>
@@ -457,18 +336,24 @@ export default function Home() {
             )}
 
             {/* Ticket: loading/error Card, or TicketCard (data/default) */}
-            {hasTicket ? (
+            {ownsTicket ? (
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, ease: 'easeOut' }}
               >
-                <TicketWallet hasTicket={hasTicket} onReleaseComplete={handleRefund} />
+                <TicketWallet
+                  tickets={ownedTickets}
+                  actionMint={actionMint}
+                  onListTicket={listTicket}
+                  onCancelListing={cancelListing}
+                  ownerLabel={walletKey ? `${walletKey.slice(0, 8)}...${walletKey.slice(-6)}` : undefined}
+                />
               </motion.div>
-            ) : stateLoading ? (
+            ) : quoteNotReady ? (
               <Card className={cn('glass-panel', 'bg-zinc-900/50 border-zinc-800')}>
                 <CardContent className="p-6 space-y-3">
-                  <p className="text-zinc-400 text-xs uppercase tracking-wider">正在同步链上数据...</p>
+                  <p className="text-zinc-400 text-xs uppercase tracking-wider">正在同步 Shield Quote...</p>
                   <div className="space-y-2">
                     <Skeleton className="h-3 w-full" />
                     <Skeleton className="h-3 w-3/4" />
@@ -476,72 +361,98 @@ export default function Home() {
                   </div>
                 </CardContent>
               </Card>
-            ) : (auctionNotStarted || (!globalState && stateError)) && !(proofData || currentTier != null) ? (
-              auctionNotStarted ? (
-                <Card className={cn('glass-panel', 'bg-zinc-900/50 border-zinc-800')}>
-                  <CardContent className="p-6 space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-48" />
-                    <p className="text-zinc-500 text-xs mt-1">拍卖尚未开始 · GlobalState 尚未初始化</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className={cn('glass-panel', 'border-red-500/30 bg-red-950/20')}>
-                  <CardContent className="p-6">
-                    <p className="text-red-300 text-sm">链上数据同步失败</p>
-                    <p className="text-red-400/80 text-xs mt-1">{stateError}</p>
-                  </CardContent>
-                </Card>
-              )
+            ) : stateError && !quote ? (
+              <Card className={cn('glass-panel', 'border-red-500/30 bg-red-950/20')}>
+                <CardContent className="p-6">
+                  <p className="text-red-300 text-sm">Shield quote 获取失败</p>
+                  <p className="text-red-400/80 text-xs mt-1">{stateError}</p>
+                </CardContent>
+              </Card>
             ) : (
               <>
                 <p className={cn(
                   'text-xs font-medium px-2 py-1 rounded-md border w-fit',
                   tierLevel === 1 && 'text-emerald-400 border-emerald-600/50 bg-emerald-950/20',
-                  tierLevel === 2 && 'text-zinc-400 border-zinc-600 bg-zinc-900/50',
-                  tierLevel === 3 && 'text-red-400 border-red-600/50 bg-red-950/20'
+                  tierLevel === 2 && 'text-zinc-400 border-zinc-600 bg-zinc-900/50'
                 )}>
                   {tierBadgeLabel}
                 </p>
-                {simulationActive && (
-                  <p className="text-xs font-semibold px-2 py-1 rounded-md border border-amber-500/60 bg-amber-950/40 text-amber-400 w-fit">
-                    ⚠️ SIMULATION MODE
-                  </p>
-                )}
-                {scalperMode && (
-                  <p className="text-sm text-red-400/90 font-medium">
-                    👥 {LIVE_QUEUE_AHEAD.toLocaleString()} people ahead of you
-                  </p>
-                )}
+                <p className="text-xs text-zinc-500">{quoteModeHint}</p>
+                {verificationWarning ? (
+                  <p className="text-xs text-amber-400">{verificationWarning}</p>
+                ) : null}
                 <>
                   <TicketCard
                     tier={tierLevel}
                     title="VIP STANDING (Soundcheck Access)"
                     description="Includes early entry and exclusive laminate."
-                    basePrice={ticketHasData ? faceValueSol : ticketDefaultSol}
-                    deposit={ticketHasData ? animatedDeposit : 0}
-                    total={ticketHasData ? faceValueSol + animatedDeposit : ticketDefaultSol}
-                    itemsSold={itemsSoldDisplay}
+                    basePrice={pricingReady ? faceValueSol : ticketDefaultSol}
+                    deposit={pricingReady ? animatedDeposit : 0}
+                    total={pricingReady ? faceValueSol + animatedDeposit : ticketDefaultSol}
                     depositLabel={depositLabel}
                     totalVariant={totalVariant}
                   />
-                  <JCurveChart
-                    currentSales={currentSales}
-                    targetSales={targetSales}
-                    tier={tierLevel}
-                  />
-                  {!proofData && (
-                    <label className="flex items-center gap-2 text-sm text-zinc-400">
-                      <input
-                        type="checkbox"
-                        checked={scalperMode}
-                        onChange={(e) => setScalperMode(e.target.checked)}
-                        className="rounded border-zinc-600 bg-zinc-800 text-orange-600 focus:ring-orange-500/50"
-                      />
-                      Scalper Mode (Tier 3)
-                    </label>
-                  )}
-
+                  <Card className={cn('glass-panel', 'bg-black/40 backdrop-blur-md border border-white/10 shadow-glow-burnt-sm')}>
+                    <CardContent className="grid grid-cols-2 gap-3 p-4 text-sm">
+                      <div>
+                        <p className="text-zinc-500 text-xs uppercase tracking-wider">Network</p>
+                        <p className="text-white font-medium">{clusterLabel}</p>
+                      </div>
+                      <div>
+                        <p className="text-zinc-500 text-xs uppercase tracking-wider">Dignity</p>
+                        <p className="text-white font-medium">{quote?.dignityScore ?? '--'}</p>
+                      </div>
+                      <div>
+                        <p className="text-zinc-500 text-xs uppercase tracking-wider">Heat</p>
+                        <p className="text-white font-medium">
+                          {quote ? `${Number(quote.effectiveVelocityBps) / 100}%` : '--'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-zinc-500 text-xs uppercase tracking-wider">TTL</p>
+                        <p className="text-white font-medium">
+                          {quoteExpiresInSec != null ? `${quoteExpiresInSec}s` : '--'}
+                        </p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-zinc-500 text-xs uppercase tracking-wider">Protocol</p>
+                        <p className={cn(
+                          'font-medium',
+                          protocolMissingAdmin ? 'text-amber-400' : 'text-emerald-400'
+                        )}>
+                          {protocolState == null
+                            ? 'Checking cluster readiness...'
+                            : protocolMissingAdmin
+                              ? 'Admin config missing on this cluster'
+                              : protocolMissingGlobal
+                                ? 'Admin config ready, global config pending'
+                                : 'Ready for v2 execution'}
+                        </p>
+                      </div>
+                      {lastTxSignature ? (
+                        <div className="col-span-2">
+                          <p className="text-zinc-500 text-xs uppercase tracking-wider">Last Tx (on-chain)</p>
+                          <p className="font-mono text-xs text-zinc-300 break-all">{lastTxSignature}</p>
+                          <a
+                            href={`https://explorer.solana.com/tx/${lastTxSignature}?cluster=${(process.env.NEXT_PUBLIC_SOLANA_CLUSTER ?? 'devnet')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-orange-400 hover:text-orange-300 mt-1 inline-block"
+                          >
+                            View on Solana Explorer →
+                          </a>
+                        </div>
+                      ) : null}
+                      {lastExecutionEvent ? (
+                        <div className="col-span-2">
+                          <p className="text-zinc-500 text-xs uppercase tracking-wider">Last Final Price</p>
+                          <p className="text-white font-medium">
+                            {lamportsToSol(lastExecutionEvent.finalPriceLamports).toFixed(3)} SOL
+                          </p>
+                        </div>
+                      ) : null}
+                    </CardContent>
+                  </Card>
                   <motion.div className="w-full" {...tapScale}>
                     <Button
                       variant="default"
@@ -556,16 +467,32 @@ export default function Home() {
                           Processing...
                         </>
                       ) : (
-                        'Secure VIP Tickets'
+                        ownsTicket ? 'Ticket Already Held' : 'Secure VIP Tickets'
                       )}
                     </Button>
                   </motion.div>
-                  {buyError && (
-                    <p className="text-red-400 text-sm">{buyError}</p>
-                  )}
+                  {ownsTicket ? (
+                    <p className="text-sm text-amber-400">This wallet already holds an on-chain ticket. List it on resale before buying again.</p>
+                  ) : null}
+                  {quote?.blocked ? (
+                    <p className="text-red-400 text-sm">当前模式被 Shield 标记为高风险，执行会被链上拒绝。</p>
+                  ) : null}
+                  {stateError ? <p className="text-red-400 text-sm">{stateError}</p> : null}
                 </>
               </>
             )}
+            {ticketError ? <p className="text-sm text-amber-400">{ticketError}</p> : null}
+            {visibleListings.length > 0 ? (
+              <div className="space-y-3 pt-2">
+                <p className="text-xs uppercase tracking-[0.28em] text-zinc-500">Live Resale Market</p>
+                <TicketMarketplace
+                  listings={visibleListings}
+                  currentWallet={walletKey}
+                  actionMint={actionMint}
+                  onBuyListing={buyListing}
+                />
+              </div>
+            ) : null}
 
           </motion.div>
 
@@ -581,23 +508,21 @@ export default function Home() {
             {showDebug && (
               <div className="mt-2 p-3 rounded-lg bg-zinc-900/50 border border-zinc-800">
                 <p className="text-zinc-500 text-xs uppercase tracking-wider mb-2">管理员操作区</p>
-                <InitializeButton program={program} programId={programId} />
+                <InitializeButton
+                  program={program}
+                  programId={programId}
+                  onInitialized={async () => {
+                    await Promise.all([
+                      refreshQuote(desiredMode, proofData),
+                      refreshPortfolio(),
+                    ]);
+                  }}
+                />
               </div>
             )}
           </motion.div>
         </motion.div>
       </main>
-
-      <SimulationPanel
-        simulatedSold={simulatedSold}
-        simulatedTime={simulatedTime}
-        targetSales={targetSales}
-        chainSales={chainSales}
-        onChange={(sold, time) => {
-          setSimulatedSold(sold);
-          setSimulatedTime(time);
-        }}
-      />
       <PriceTicker />
     </>
   );

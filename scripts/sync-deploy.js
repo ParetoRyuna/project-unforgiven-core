@@ -1,96 +1,117 @@
 #!/usr/bin/env node
-/**
- * Sync deploy artifacts to frontend:
- * - Copy target/idl/unforgiven.json -> app/idl + utils
- * - Update .env.local with NEXT_PUBLIC_PROGRAM_ID
- *
- * Usage:
- *   node scripts/sync-deploy.js --program-id <PUBKEY>
- *   node scripts/sync-deploy.js            # uses Anchor.toml programs.localnet
- */
+
 const fs = require('fs');
 const path = require('path');
+const { Keypair } = require('@solana/web3.js');
 
 const ROOT = process.cwd();
-const IDL_SRC = path.join(ROOT, 'target', 'idl', 'unforgiven.json');
-const IDL_APP = path.join(ROOT, 'app', 'idl', 'unforgiven.json');
-const IDL_UTILS = path.join(ROOT, 'utils', 'unforgiven.json');
 const ENV_LOCAL = path.join(ROOT, '.env.local');
-const ANCHOR_TOML = path.join(ROOT, 'Anchor.toml');
-
-function patchIdlWithMetadata(idl, programId) {
-  const name = idl.name || 'unforgiven';
-  const version = idl.version || '0.1.0';
-  const metadata = idl.metadata || {};
-  return {
-    ...idl,
-    metadata: {
-      name: metadata.name || name,
-      version: metadata.version || version,
-      address: metadata.address || programId,
-    },
-    address: idl.address || programId,
-  };
-}
-
-function readProgramIdFromAnchorToml() {
-  if (!fs.existsSync(ANCHOR_TOML)) return null;
-  const text = fs.readFileSync(ANCHOR_TOML, 'utf8');
-  const m = text.match(/^\s*unforgiven\s*=\s*\"([1-9A-HJ-NP-Za-km-z]{32,44})\"/m);
-  return m ? m[1] : null;
-}
 
 function parseArgs() {
   const args = process.argv.slice(2);
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--program-id' && args[i + 1]) {
-      return { programId: args[i + 1] };
-    }
+  const out = {
+    programName: 'unforgiven_v2',
+    idlName: null,
+    programId: null,
+    cluster: null,
+    rpcUrl: null,
+  };
+
+  for (let i = 0; i < args.length; i += 1) {
+    const next = args[i + 1];
+    if (args[i] === '--program-name' && next) out.programName = next;
+    if (args[i] === '--idl-name' && next) out.idlName = next;
+    if (args[i] === '--program-id' && next) out.programId = next;
+    if (args[i] === '--cluster' && next) out.cluster = next;
+    if (args[i] === '--rpc-url' && next) out.rpcUrl = next;
   }
-  return { programId: null };
+
+  out.idlName = out.idlName || out.programName;
+  return out;
 }
 
-function updateEnvLocal(programId) {
-  const line = `NEXT_PUBLIC_PROGRAM_ID='${programId}'`;
-  if (!fs.existsSync(ENV_LOCAL)) {
-    fs.writeFileSync(ENV_LOCAL, line + '\n');
-    return;
+function idlPaths(idlName) {
+  return {
+    source: path.join(ROOT, 'target', 'idl', `${idlName}.json`),
+    app: path.join(ROOT, 'app', 'idl', `${idlName}.json`),
+    utils: path.join(ROOT, 'utils', `${idlName}.json`),
+  };
+}
+
+function findProgramKeypair(programName) {
+  return path.join(ROOT, 'target', 'deploy', `${programName}-keypair.json`);
+}
+
+function deriveProgramIdFromKeypair(programName) {
+  const keypairPath = findProgramKeypair(programName);
+  if (!fs.existsSync(keypairPath)) return null;
+  const raw = JSON.parse(fs.readFileSync(keypairPath, 'utf8'));
+  return Keypair.fromSecretKey(Uint8Array.from(raw)).publicKey.toBase58();
+}
+
+function patchIdl(idl, programId) {
+  return {
+    ...idl,
+    address: programId,
+    metadata: {
+      ...(idl.metadata || {}),
+      address: programId,
+    },
+  };
+}
+
+function updateEnvFile(entries) {
+  let text = fs.existsSync(ENV_LOCAL) ? fs.readFileSync(ENV_LOCAL, 'utf8') : '';
+
+  for (const [key, value] of Object.entries(entries)) {
+    if (!value) continue;
+    const nextLine = `${key}='${value}'`;
+    if (new RegExp(`^${key}=`, 'm').test(text)) {
+      text = text.replace(new RegExp(`^${key}=.*$`, 'm'), nextLine);
+    } else {
+      text = text.replace(/\s*$/, '\n');
+      text += `${nextLine}\n`;
+    }
   }
-  const text = fs.readFileSync(ENV_LOCAL, 'utf8');
-  if (text.includes('NEXT_PUBLIC_PROGRAM_ID=')) {
-    const updated = text.replace(/^NEXT_PUBLIC_PROGRAM_ID=.*$/m, line);
-    fs.writeFileSync(ENV_LOCAL, updated);
-  } else {
-    fs.writeFileSync(ENV_LOCAL, text.replace(/\s*$/, '\n') + line + '\n');
-  }
+
+  fs.writeFileSync(ENV_LOCAL, text.trimEnd() + '\n');
 }
 
 function main() {
-  const { programId: argProgramId } = parseArgs();
-  const programId = argProgramId || readProgramIdFromAnchorToml();
+  const { programName, idlName, programId: argProgramId, cluster, rpcUrl } = parseArgs();
+  const programId = argProgramId || deriveProgramIdFromKeypair(programName);
   if (!programId) {
-    console.error('Missing program id. Pass --program-id or set it in Anchor.toml.');
+    console.error(`Unable to resolve program id for ${programName}. Pass --program-id or build the deploy keypair first.`);
     process.exit(1);
   }
 
-  if (!fs.existsSync(IDL_SRC)) {
-    console.error(`IDL not found at ${IDL_SRC}. Run anchor build first.`);
+  const paths = idlPaths(idlName);
+  if (!fs.existsSync(paths.source)) {
+    console.error(`IDL not found at ${paths.source}. Run anchor build first.`);
     process.exit(1);
   }
 
-  const rawIdl = JSON.parse(fs.readFileSync(IDL_SRC, 'utf8'));
-  const patchedIdl = patchIdlWithMetadata(rawIdl, programId);
-  const out = JSON.stringify(patchedIdl, null, 2) + '\n';
-  fs.writeFileSync(IDL_SRC, out);
-  fs.writeFileSync(IDL_APP, out);
-  fs.writeFileSync(IDL_UTILS, out);
-  updateEnvLocal(programId);
+  const rawIdl = JSON.parse(fs.readFileSync(paths.source, 'utf8'));
+  const patchedIdl = JSON.stringify(patchIdl(rawIdl, programId), null, 2) + '\n';
+  fs.writeFileSync(paths.source, patchedIdl);
+  fs.writeFileSync(paths.app, patchedIdl);
+  fs.writeFileSync(paths.utils, patchedIdl);
 
-  console.log('Synced IDL and program id:');
-  console.log(`- ${IDL_APP}`);
-  console.log(`- ${IDL_UTILS}`);
-  console.log(`- ${ENV_LOCAL}`);
-  console.log(`Program ID: ${programId}`);
+  updateEnvFile({
+    NEXT_PUBLIC_PROGRAM_ID: programId,
+    NEXT_PUBLIC_SOLANA_CLUSTER: cluster,
+    NEXT_PUBLIC_SOLANA_RPC_URL: rpcUrl,
+  });
+
+  console.log('Synced deploy artifacts:');
+  console.log(`- Program: ${programName}`);
+  console.log(`- Program ID: ${programId}`);
+  console.log(`- IDL source: ${paths.source}`);
+  console.log(`- IDL app:    ${paths.app}`);
+  console.log(`- IDL utils:  ${paths.utils}`);
+  if (cluster) console.log(`- Cluster:    ${cluster}`);
+  if (rpcUrl) console.log(`- RPC URL:    ${rpcUrl}`);
+  console.log(`- Env file:   ${ENV_LOCAL}`);
 }
 
 main();

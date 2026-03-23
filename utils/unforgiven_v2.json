@@ -1,0 +1,1167 @@
+{
+  "version": "0.1.0",
+  "name": "unforgiven_v2",
+  "instructions": [
+    {
+      "name": "initializeV2",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "programData",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "globalConfigV2",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initializeAdminConfig",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "programData",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "adminConfig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "oraclePubkey",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "activeScoringModelHash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "rotateOracle",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "adminConfig",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "oraclePubkey",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "setScoringModelHash",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "adminConfig",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "activeScoringModelHash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "resetAdminGuardrails",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "adminConfig",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "baselineScoringModelHash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "previewPrice",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "adminConfig",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "payload",
+          "type": {
+            "defined": "ShieldPayloadV0"
+          }
+        },
+        {
+          "name": "oracleSignature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "executeShield",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalConfigV2",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "treasury",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "adminConfig",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "proofUse",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ticketMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ticketMintAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userTicketToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ticketReceipt",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "seedPayload",
+          "type": {
+            "defined": "ShieldPayloadV0"
+          }
+        },
+        {
+          "name": "oracleSignature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "listTicket",
+      "accounts": [
+        {
+          "name": "seller",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "ticketMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ticketReceipt",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellerTicketToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "listing",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "listingEscrowToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "askPrice",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "cancelTicketListing",
+      "accounts": [
+        {
+          "name": "seller",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "ticketMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ticketReceipt",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "listing",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellerTicketToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "listingEscrowToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "fillTicketListing",
+      "accounts": [
+        {
+          "name": "buyer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "seller",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "globalConfigV2",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "feeRecipient",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ticketMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ticketReceipt",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "listing",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "buyerTicketToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "listingEscrowToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "GlobalConfigV2",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AdminConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "oraclePubkey",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "activeScoringModelHash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProofUse",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "userPubkey",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "zkProofHash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          },
+          {
+            "name": "usedAt",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TicketReceipt",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "eventKey",
+            "type": "publicKey"
+          },
+          {
+            "name": "originalBuyer",
+            "type": "publicKey"
+          },
+          {
+            "name": "currentHolder",
+            "type": "publicKey"
+          },
+          {
+            "name": "purchasePrice",
+            "type": "u64"
+          },
+          {
+            "name": "lastSalePrice",
+            "type": "u64"
+          },
+          {
+            "name": "issuedAt",
+            "type": "i64"
+          },
+          {
+            "name": "lastTransferAt",
+            "type": "i64"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          },
+          {
+            "name": "zkProofHash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "listed",
+            "type": "bool"
+          },
+          {
+            "name": "resaleCount",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TicketListing",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "seller",
+            "type": "publicKey"
+          },
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "askPrice",
+            "type": "u64"
+          },
+          {
+            "name": "createdAt",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "ShieldPayloadV0",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "policyVersion",
+            "type": "u8"
+          },
+          {
+            "name": "userPubkey",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "initialPrice",
+            "type": "u64"
+          },
+          {
+            "name": "salesVelocityBps",
+            "type": "i64"
+          },
+          {
+            "name": "timeElapsed",
+            "type": "u64"
+          },
+          {
+            "name": "dignityScore",
+            "type": "u8"
+          },
+          {
+            "name": "adapterMask",
+            "type": "u8"
+          },
+          {
+            "name": "userMode",
+            "type": "u8"
+          },
+          {
+            "name": "zkProvider",
+            "type": "u8"
+          },
+          {
+            "name": "zkProofHash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "scoringModelHash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "attestationExpiry",
+            "type": "i64"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VrgdaMathError",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "InvalidSalesVelocity"
+          },
+          {
+            "name": "InvalidDignityScore"
+          },
+          {
+            "name": "InvalidTimeElapsed"
+          }
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "InterrogationTurnCommittedEvent",
+      "fields": [
+        {
+          "name": "chapter",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "nodeId",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "choiceId",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "suspicionCost",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "budgetLeftBps",
+          "type": "u16",
+          "index": false
+        },
+        {
+          "name": "relationDelta",
+          "type": "i8",
+          "index": false
+        },
+        {
+          "name": "pollutionFlag",
+          "type": "bool",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "ChapterDecisionCommittedEvent",
+      "fields": [
+        {
+          "name": "chapter",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "nodeId",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "decisionCode",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "relationAfter",
+          "type": "i8",
+          "index": false
+        },
+        {
+          "name": "truthProgress",
+          "type": "u8",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "SessionFinalizedEvent",
+      "fields": [
+        {
+          "name": "endingCode",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "finalDignity",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "humanityScore",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "relationFinal",
+          "type": "i8",
+          "index": false
+        },
+        {
+          "name": "truthUnlocked",
+          "type": "bool",
+          "index": false
+        },
+        {
+          "name": "framedFlag",
+          "type": "bool",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "PreviewPriceEvent",
+      "fields": [
+        {
+          "name": "finalPrice",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "isInfinite",
+          "type": "bool",
+          "index": false
+        },
+        {
+          "name": "blocked",
+          "type": "bool",
+          "index": false
+        },
+        {
+          "name": "effectiveVelocityBps",
+          "type": "i64",
+          "index": false
+        },
+        {
+          "name": "dignityScore",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "adapterMask",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "dignityBucket",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "userMode",
+          "type": "u8",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "ShieldExecutionEvent",
+      "fields": [
+        {
+          "name": "finalPrice",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "blocked",
+          "type": "bool",
+          "index": false
+        },
+        {
+          "name": "effectiveVelocityBps",
+          "type": "i64",
+          "index": false
+        },
+        {
+          "name": "dignityScore",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "adapterMask",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "userMode",
+          "type": "u8",
+          "index": false
+        },
+        {
+          "name": "nonce",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "zkProofHash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          },
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "TicketMintedEvent",
+      "fields": [
+        {
+          "name": "mint",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "owner",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "finalPrice",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "nonce",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "TicketListedEvent",
+      "fields": [
+        {
+          "name": "mint",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "seller",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "askPrice",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "TicketListingCanceledEvent",
+      "fields": [
+        {
+          "name": "mint",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "seller",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "TicketSaleEvent",
+      "fields": [
+        {
+          "name": "mint",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "seller",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "buyer",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "salePrice",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "protocolFee",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "resaleCount",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidPolicyVersion",
+      "msg": "Invalid policy version"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidDignityScore",
+      "msg": "Invalid dignity score"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidSalesVelocity",
+      "msg": "Invalid sales velocity"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidUserMode",
+      "msg": "Invalid user mode"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidTimeElapsed",
+      "msg": "Invalid time elapsed"
+    },
+    {
+      "code": 6005,
+      "name": "AttestationExpired",
+      "msg": "Attestation expired"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidOracleSignature",
+      "msg": "Invalid oracle signature"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidOraclePubkey",
+      "msg": "Invalid oracle public key"
+    },
+    {
+      "code": 6008,
+      "name": "ScoringModelHashMismatch",
+      "msg": "Scoring model hash mismatch"
+    },
+    {
+      "code": 6009,
+      "name": "UserPubkeyMismatch",
+      "msg": "Signer does not match payload user pubkey"
+    },
+    {
+      "code": 6010,
+      "name": "ShieldBlocked",
+      "msg": "Shield blocked execution for this payload"
+    },
+    {
+      "code": 6011,
+      "name": "MissingEd25519Instruction",
+      "msg": "Missing prior ed25519 verify instruction"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidEd25519Instruction",
+      "msg": "Invalid ed25519 verify instruction"
+    },
+    {
+      "code": 6013,
+      "name": "Ed25519MessageMismatch",
+      "msg": "Ed25519 instruction payload mismatch"
+    },
+    {
+      "code": 6014,
+      "name": "Ed25519PubkeyMismatch",
+      "msg": "Ed25519 instruction pubkey mismatch"
+    },
+    {
+      "code": 6015,
+      "name": "Ed25519SignatureMismatch",
+      "msg": "Ed25519 instruction signature mismatch"
+    },
+    {
+      "code": 6016,
+      "name": "TreasuryMismatch",
+      "msg": "Treasury account does not match protocol authority"
+    },
+    {
+      "code": 6017,
+      "name": "TicketMintMismatch",
+      "msg": "Ticket receipt mint mismatch"
+    },
+    {
+      "code": 6018,
+      "name": "TicketOwnerMismatch",
+      "msg": "Ticket receipt owner mismatch"
+    },
+    {
+      "code": 6019,
+      "name": "TicketAlreadyListed",
+      "msg": "Ticket is already listed"
+    },
+    {
+      "code": 6020,
+      "name": "TicketNotListed",
+      "msg": "Ticket is not listed"
+    },
+    {
+      "code": 6021,
+      "name": "InvalidListingPrice",
+      "msg": "Listing price must be positive"
+    },
+    {
+      "code": 6022,
+      "name": "InvalidTicketAmount",
+      "msg": "Ticket token amount mismatch"
+    },
+    {
+      "code": 6023,
+      "name": "SelfTradeForbidden",
+      "msg": "Self trade is not allowed"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidExecuteShieldAccount",
+      "msg": "Invalid execute_shield account"
+    }
+  ],
+  "metadata": {
+    "address": "5VqDVHqeCJW1cWZgydjJLG68ShDGVZ45k6cE7hUY9uMW"
+  },
+  "address": "5VqDVHqeCJW1cWZgydjJLG68ShDGVZ45k6cE7hUY9uMW"
+}

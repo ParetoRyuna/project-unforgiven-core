@@ -38,6 +38,8 @@ export function TicketCard({
 }: TicketCardProps) {
   const hasBreakdown = typeof total === "number";
   const displayTotal = hasBreakdown ? total : (typeof price === "number" ? price : Number(price) || 0);
+  const badgeVariant = tier === 1 ? "default" : tier === 2 ? "secondary" : "destructive";
+  const badgeLabel = tier === 1 ? "VERIFIED FAN" : tier === 2 ? "GUEST" : "HIGH RISK";
 
   return (
     <motion.div
@@ -51,8 +53,8 @@ export function TicketCard({
           <CardTitle className="text-xl font-bold tracking-tighter text-white">
             {title}
           </CardTitle>
-          <Badge variant={tier === 1 ? "default" : "destructive"}>
-            {tier === 1 ? "VERIFIED FAN" : "HIGH RISK"}
+          <Badge variant={badgeVariant}>
+            {badgeLabel}
           </Badge>
         </CardHeader>
         {description && (

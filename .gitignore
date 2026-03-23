@@ -42,3 +42,6 @@ public/partners/CG-GT-Logos.zip
 
 # Local-only private notes (do not upload)
 docs-private/
+
+# Local deck / presentation exports
+.deck_assets/
