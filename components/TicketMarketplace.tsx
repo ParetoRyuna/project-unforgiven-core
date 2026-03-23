@@ -41,7 +41,7 @@ export default function TicketMarketplace({
                   <ShoppingCart className="h-3.5 w-3.5" aria-hidden />
                   Resale Marketplace
                 </div>
-                <h3 className="mt-2 text-xl font-black text-white">LE SSERAFIM VIP Access</h3>
+                <h3 className="mt-2 text-xl font-black text-white">UNFORGIVEN Access Receipt</h3>
                 <p className="mt-1 text-xs font-mono text-zinc-400">Mint {shortKey(mint)}</p>
               </div>
               <div className="text-right">
@@ -70,7 +70,7 @@ export default function TicketMarketplace({
                 ) : isOwnListing ? (
                   'Your Listing'
                 ) : (
-                  'Buy Listed Ticket'
+                  'Buy Listed Receipt'
                 )}
               </Button>
             </div>

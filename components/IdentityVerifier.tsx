@@ -196,7 +196,7 @@ export default function IdentityVerifier({ onVerifySuccess, disabled }: Identity
           </button>
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-neutral-500 text-xs">Tier 1 粉丝模式已解锁</p>
+          <p className="text-neutral-500 text-xs">Tier 1 verified path unlocked</p>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -227,7 +227,7 @@ export default function IdentityVerifier({ onVerifySuccess, disabled }: Identity
 
   return (
     <div className="glass-panel rounded-xl p-4 w-full max-w-sm space-y-4">
-      <p className="text-sm text-neutral-400">验证身份以解锁粉丝票价 (Spotify 听歌记录)</p>
+      <p className="text-sm text-neutral-400">Verify a wallet-bound zkTLS proof to unlock the verified execution path.</p>
 
       <button
         type="button"
@@ -255,4 +255,3 @@ export default function IdentityVerifier({ onVerifySuccess, disabled }: Identity
     </div>
   );
 }
-

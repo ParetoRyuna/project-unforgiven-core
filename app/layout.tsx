@@ -4,7 +4,7 @@ import AppWalletProvider from "@/components/AppWalletProvider";
 
 export const metadata: Metadata = {
   title: "PROJECT UNFORGIVEN",
-  description: "Identity-Weighted VRGDA Protocol",
+  description: "VRGDA + zkTLS on-chain fairness execution on Solana",
   manifest: "/manifest.json",
 };
 

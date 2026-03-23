@@ -58,9 +58,9 @@ export default function TicketWallet({
               <div>
                 <div className="flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-sky-200/70">
                   <Ticket className="h-3.5 w-3.5" aria-hidden />
-                  On-chain Ticket
+                  On-chain Receipt
                 </div>
-                <h3 className="mt-2 text-xl font-black text-white">LE SSERAFIM VIP Access</h3>
+                <h3 className="mt-2 text-xl font-black text-white">UNFORGIVEN Access Receipt</h3>
                 <p className="mt-1 text-xs font-mono text-zinc-400">Mint {shortKey(ticket.mint)}</p>
               </div>
               <span
@@ -168,7 +168,7 @@ export default function TicketWallet({
                         Listing...
                       </>
                     ) : (
-                      'List Ticket'
+                      'List Receipt'
                     )}
                   </Button>
                 </div>

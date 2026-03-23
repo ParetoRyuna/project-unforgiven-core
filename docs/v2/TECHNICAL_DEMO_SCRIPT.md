@@ -1,52 +1,29 @@
-# UNFORGIVEN v2 — 2–3 Minute Technical Demo Script (Guarded Claim)
+# UNFORGIVEN v2 — Colosseum Technical Demo Script
 
-Use this script to record the Colosseum technical demo. Keep it to 2–3 minutes; focus on **Guarded Claim** and Solana integration.
+Target length: 2 to 3 minutes.
 
-**Recording stability:** For recording stability, the demo can use a pre-signed Shield quote fixture (`NEXT_PUBLIC_DEMO_QUOTE_MODE=fixture`) while keeping on-chain verification and execution fully live (Ed25519 verify + execute_shield → devnet tx → Explorer). The page shows “Quote source: Pre-signed fixture for demo stability” when so configured.
+## 0:00 - 0:30
 
----
+“Most anti-bot systems stop at off-chain scoring. UNFORGIVEN takes a different route: we combine zkTLS identity proofs with VRGDA pricing, sign that decision, and enforce the same payload on-chain.”
 
-## [0:00–0:25] Problem & what we built
+## 0:30 - 1:00
 
-- “High-heat Solana mints and claims get botted. UNFORGIVEN is a fairness middleware: every execution is guarded by a signed attestation from our Shield oracle and verified on-chain.”
-- “We’re showing one path: **Guarded Claim** — request a quote, get a signed payload, build the Solana transaction, and execute on devnet.”
+“The core novelty is the full path: zkTLS or Reclaim proof, dignity scoring, VRGDA quote, oracle-signed payload, Ed25519 verification, then `execute_shield` on Solana.”
 
----
+## 1:00 - 1:45
 
-## [0:25–0:50] Why we prioritized these features
+“Here is the Guarded Claim demo. I connect my wallet, the app requests a quote, and the oracle returns `payload_hex`, `oracle_signature_hex`, and `oracle_pubkey`.”
 
-- “We prioritized **signed payloads** so the chain never trusts the client — only the oracle’s Ed25519 signature.”
-- “A **plugin contract** gives integrators a stable schema: payload_hex, oracle_signature_hex, oracle_pubkey.”
-- “**Fail-closed hardening** in production: if rate-limit or replay store is down, we don’t issue quotes. That’s why you see a clear allow/block from Shield before any chain execution.”
+“Now I click Claim. The client builds a transaction with Ed25519 verification plus `execute_shield`, and submits it to devnet.”
 
----
+## 1:45 - 2:15
 
-## [0:50–1:35] Demo flow (screen: /demo/guarded-claim)
+“The important part is that Solana re-checks the exact signed payload before execution. This is not just UI gating or an API score. The chain enforces the decision.”
 
-- “This is the demo page: Guarded Claim.”
-- “I connect my Solana wallet. The page shows Recording status and Quote status; when it says ‘Ready to record (devnet)’ or ‘Local validator mode (ready)’, the quote is in — payload_hex, oracle signature, oracle pubkey.”
-- “I click Claim. The client builds a Solana transaction: Ed25519 verify then execute_shield; we submit to devnet.”
-- “Recording status becomes Success. Here’s the transaction signature; I open it on Solana Explorer so you can see it’s a real on-chain execution.” (If local validator: “Page shows ‘Local validator run’ — same flow on devnet.”)
+## 2:15 - 2:40
 
----
+“After success, I open Solana Explorer to show the real devnet transaction. That closes the loop: proof-informed pricing, signed payload, and on-chain execution all in one path.”
 
-## [1:35–2:00] Solana’s role
+## Optional Closing Line
 
-- “Solana is the **verification and execution layer**. The program checks the oracle’s signature and the payload (expiry, scoring model, user). No execution without a valid signed payload. That’s how we keep high-heat mints and claims fair without baking custom anti-bot logic into every app.”
-
----
-
-## [2:00–2:30] Optional: one line on what’s live
-
-- “This run is on devnet; program and config accounts are live. Details and Program ID are in docs/v2/DEPLOYMENT_STATE.md.”  
-  (If you used a local validator instead: “This run was against a local validator; the same flow works on devnet with the deployed program.”)
-
----
-
-## Time total: ~2–3 minutes
-
-- Problem + what we built  
-- Why signed payload / plugin contract / fail-closed  
-- Live demo: connect → quote → claim → Explorer  
-- Solana as verification + execution layer  
-- What’s live (devnet vs local)
+“UNFORGIVEN shows that VRGDA plus zkTLS can be composed into a replay-resistant fairness execution layer for Solana launches.”

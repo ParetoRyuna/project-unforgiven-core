@@ -26,9 +26,9 @@ import {
 } from '@/lib/unforgiven-v2-client';
 
 const EVENT = {
-  name: "2026 LE SSERAFIM TOUR 'FLAME RISES' IN HONG KONG",
-  venue: 'AsiaWorld-Expo, Arena',
-  date: 'Saturday, Oct 02, 2026 • 19:00',
+  name: 'UNFORGIVEN v2',
+  venue: 'VRGDA + zkTLS + on-chain fairness execution',
+  date: 'Live Solana devnet demo • Guarded Claim',
   posterUrl: '/posters/lesserafim-unforgiven.png',
 } as const;
 
@@ -76,23 +76,23 @@ function LandingView() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
             <div className="absolute top-3 left-3 z-10 rounded-md bg-red-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg">
-              🔴 LIMITED PRESALE
+              COLOSSEUM DEMO
             </div>
           </div>
           <CardContent className="p-6 text-center space-y-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              2026 TOUR &#39;FLAME RISES&#39; IN HONG KONG
+              VRGDA + zkTLS, enforced on-chain
             </h1>
             <p className="text-zinc-400 text-sm">{EVENT.venue}</p>
             <p className="text-zinc-500 text-xs">{EVENT.date}</p>
             <p className="text-zinc-400 text-sm">
-              Connect your Solana wallet to access the exclusive presale.
+              Connect your wallet to run the guarded claim flow and inspect the signed execution path on Solana devnet.
             </p>
             <div className="pt-2 flex justify-center w-full">
               <div className="relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-600 to-red-600 rounded-lg blur opacity-50 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
                 <WalletMultiButton className="!bg-black !text-white !font-bold !uppercase !tracking-widest !h-14 !px-8 !w-full !rounded-lg !border !border-orange-500/50 !transition-all !duration-300 hover:!bg-zinc-900 !flex !justify-center !items-center wallet-adapter-button-trigger">
-                  CONNECT TO ENTER
+                  ENTER DEMO
                 </WalletMultiButton>
               </div>
             </div>
@@ -152,13 +152,13 @@ export default function Home() {
   }, [desiredMode, proofData, refreshQuote, wallet.publicKey]);
 
   const tierLevel = desiredMode === 'verified' ? 1 : 2;
-  const tierBadgeLabel = tierLevel === 1 ? 'Tier 1: Verified Fan' : 'Tier 2: Guest';
+  const tierBadgeLabel = tierLevel === 1 ? 'Tier 1: Verified zkTLS' : 'Tier 2: Guest path';
   const faceValueSol = quote ? lamportsToSol(quote.initialPriceLamports) : DEFAULT_SOL;
   const depositSol = quote ? lamportsToSol(quote.surchargeLamports) : 0;
   const currentTotalSol = quote ? lamportsToSol(quote.finalPriceLamports) : DEFAULT_SOL;
   const totalVariant = tierLevel === 1 && depositSol === 0 ? 'low' : null;
   const depositLabel =
-    tierLevel === 1 ? 'Loyalty discount applied' : 'Guest demand premium';
+    tierLevel === 1 ? 'zkTLS-weighted fairness adjustment' : 'heat-weighted VRGDA premium';
   const quoteExpiresInSec = quote ? Math.max(0, Number(quote.attestationExpiry) - nowSec) : null;
   const quoteNotReady = !quote && quoteLoading;
   const protocolMissingAdmin = !!protocolState && !protocolState.adminConfigExists;
@@ -186,7 +186,7 @@ export default function Home() {
           refreshPortfolio(),
         ]);
         const paidSol = result.event ? lamportsToSol(result.event.finalPriceLamports) : currentTotalSol;
-        alert(`购票成功! 已执行 Shield 交易并铸造链上票券。\nTX: ${result.txSignature.slice(0, 20)}...\nMint: ${result.ticketMint?.slice(0, 12) ?? 'pending'}...\nFinal Price: ${paidSol.toFixed(3)} SOL`);
+        alert(`Execution succeeded. Shield verified the signed payload and minted the on-chain receipt.\nTX: ${result.txSignature.slice(0, 20)}...\nMint: ${result.ticketMint?.slice(0, 12) ?? 'pending'}...\nFinal Price: ${paidSol.toFixed(3)} SOL`);
       }
       if (result.error) {
         alert(result.error);
@@ -232,8 +232,8 @@ export default function Home() {
   const ticketDefaultSol = DEFAULT_SOL;
   const quoteModeHint =
     desiredMode === 'verified'
-      ? 'Wallet-bound Reclaim proof accepted'
-      : 'Guest path: no proof discount applied';
+      ? 'Wallet-bound zkTLS / Reclaim proof accepted'
+      : 'Guest path: no zkTLS weight applied';
   const clusterLabel = (process.env.NEXT_PUBLIC_SOLANA_CLUSTER ?? 'devnet').toUpperCase();
 
   // 门禁：仅以 publicKey 为唯一依据。无 publicKey 绝不渲染 Dashboard，避免 connected=true 但 publicKey=null 的“薛定谔状态”
@@ -291,7 +291,7 @@ export default function Home() {
                   priority
                 />
                 <div className="absolute top-2 right-2 z-10 rounded-md bg-red-600 px-2 py-1 text-xs font-bold text-white shadow-lg">
-                  🔴 SELLING FAST
+                  FULL-CHAIN DEMO
                 </div>
                 <div className="absolute top-3 left-3 z-10">
                   <WalletDisconnectButton className="!glass-panel !rounded-full !px-3 !py-2 !text-xs !font-semibold !text-zinc-200 hover:!text-white !bg-black/40 !border !border-white/10 !shadow-glow-burnt-sm">
@@ -330,8 +330,8 @@ export default function Home() {
             )}
             {connected && proofData && (
               <div className="rounded-lg bg-teal/10 px-4 py-2 border border-teal/30">
-                <p className="text-teal text-xs font-medium">Fan Mode (Tier 1)</p>
-                <p className="text-zinc-500 text-xs mt-0.5">zkTLS 验证已通过 · 押金减免</p>
+                <p className="text-teal text-xs font-medium">Verified mode (Tier 1)</p>
+                <p className="text-zinc-500 text-xs mt-0.5">zkTLS proof accepted · lower VRGDA pressure</p>
               </div>
             )}
 
@@ -384,8 +384,8 @@ export default function Home() {
                 <>
                   <TicketCard
                     tier={tierLevel}
-                    title="VIP STANDING (Soundcheck Access)"
-                    description="Includes early entry and exclusive laminate."
+                    title="Guarded Claim Access Receipt"
+                    description="Oracle-signed VRGDA quote with zkTLS-weighted execution."
                     basePrice={pricingReady ? faceValueSol : ticketDefaultSol}
                     deposit={pricingReady ? animatedDeposit : 0}
                     total={pricingReady ? faceValueSol + animatedDeposit : ticketDefaultSol}
@@ -467,15 +467,15 @@ export default function Home() {
                           Processing...
                         </>
                       ) : (
-                        ownsTicket ? 'Ticket Already Held' : 'Secure VIP Tickets'
+                        ownsTicket ? 'Receipt Already Held' : 'Execute Guarded Claim'
                       )}
                     </Button>
                   </motion.div>
                   {ownsTicket ? (
-                    <p className="text-sm text-amber-400">This wallet already holds an on-chain ticket. List it on resale before buying again.</p>
+                    <p className="text-sm text-amber-400">This wallet already holds an on-chain receipt. List it on resale before running the claim again.</p>
                   ) : null}
                   {quote?.blocked ? (
-                    <p className="text-red-400 text-sm">当前模式被 Shield 标记为高风险，执行会被链上拒绝。</p>
+                    <p className="text-red-400 text-sm">The current mode is marked high risk by Shield, so the chain will reject execution.</p>
                   ) : null}
                   {stateError ? <p className="text-red-400 text-sm">{stateError}</p> : null}
                 </>
@@ -484,7 +484,7 @@ export default function Home() {
             {ticketError ? <p className="text-sm text-amber-400">{ticketError}</p> : null}
             {visibleListings.length > 0 ? (
               <div className="space-y-3 pt-2">
-                <p className="text-xs uppercase tracking-[0.28em] text-zinc-500">Live Resale Market</p>
+                <p className="text-xs uppercase tracking-[0.28em] text-zinc-500">Secondary Market Simulation</p>
                 <TicketMarketplace
                   listings={visibleListings}
                   currentWallet={walletKey}
