@@ -1,31 +1,88 @@
 # UNFORGIVEN v2
 
-Universal fairness middleware for high-velocity Solana launches.
+On-chain fairness execution for high-demand Solana launches.
 
-UNFORGIVEN v2 combines Shield-first scoring, signed execution payloads, and on-chain verifiable checks to reduce bot extraction without forcing custom anti-bot logic into every app.
+UNFORGIVEN v2 is built around one core idea: combine `VRGDA` pricing pressure with `zkTLS`-backed identity proofs, then carry that decision all the way into a signed, verifiable on-chain execution path.
 
-## Competition Snapshot (Eternal)
+This is not just a frontend anti-bot filter.
+It is a full pipeline:
 
-Current repo state includes:
+`zkTLS / Reclaim proof -> dignity score -> VRGDA quote -> oracle-signed payload -> Ed25519 verify -> execute_shield -> one-time proof consumption on-chain`
 
-- Shield oracle hardening (`fail-closed` policies in production)
-  - rate-limit Redis unavailable => fail-closed
-  - replay store Redis unavailable => fail-closed
-  - provider allowlist required in production
-- Hub decision engine with behavior signals
-  - scenario-aware signals from telemetry summaries
-  - risk signal merge into quote decisions (`allow | step_up | block`)
-- Shadow-mode behavior lab (`/lab`)
-  - playable story/case/daily/pressure routes
-  - telemetry ingest + shadow decision record APIs
-  - no user-flow blocking in lab mode
-- Plugin Contract V1
-  - stable output schema for integrators
-  - contract tests + smoke script
+## Why This Matters
 
-## Reviewer Quick Start (Recommended)
+High-demand launches fail in predictable ways:
 
-Run this exact path:
+- bots can spam faster than humans
+- static allowlists are easy to bypass
+- off-chain risk checks are hard to trust at execution time
+- even good scoring systems fail if the final on-chain action does not enforce the same decision
+
+UNFORGIVEN v2 closes that gap by turning identity-aware pricing and access logic into a signed payload that the Solana program re-verifies before execution.
+
+## Core Innovation
+
+### 1. VRGDA as a fairness valve, not just a sales curve
+
+In `programs/unforgiven_v2/src/unforgiven_math.rs`, price is not only a function of time and velocity.
+It is also weighted by identity quality:
+
+- low dignity score -> much higher effective velocity pressure
+- high dignity score -> lower final price and better access
+- extreme heat -> infinite / blocked path instead of silently allowing extraction
+
+This creates a useful split:
+
+- suspected bots get pushed toward punitive pricing or outright block
+- verified humans remain near the intended price band
+
+### 2. zkTLS proofs become execution inputs, not marketing claims
+
+The oracle path verifies wallet-bound `zkTLS` / `Reclaim` attestations, hashes the proof bundle, and embeds that hash into a fixed-width Shield payload.
+
+That payload includes:
+
+- `user_pubkey`
+- `zk_proof_hash`
+- `scoring_model_hash`
+- `attestation_expiry`
+- `nonce`
+- VRGDA quote inputs and mode flags
+
+The important part is not just proof verification off-chain.
+The important part is that the proof hash is carried into the on-chain execution path and tied to one-time consumption.
+
+### 3. Full-chain enforcement instead of “score off-chain, trust me”
+
+`execute_shield` in `programs/unforgiven_v2/src/lib.rs` re-checks the same signed payload on-chain and creates a `ProofUse` PDA derived from:
+
+- `user_pubkey`
+- `zk_proof_hash`
+- `nonce`
+
+That means the fairness decision is not only computed off-chain, it is enforced on-chain with replay resistance.
+
+## What Makes This Different
+
+Most launch protection stacks do one of these:
+
+- block at the UI layer
+- run off-chain scoring with no verifiable execution guarantee
+- use identity proofs for gating, but not for dynamic price formation
+- use dynamic pricing, but not identity-bound proof consumption
+
+UNFORGIVEN v2 combines all four layers in one path:
+
+1. `zkTLS` attestation proves something about the user without exposing raw credentials
+2. dignity scoring turns that signal into a machine-readable trust weight
+3. `VRGDA` transforms trust + heat into a price / block decision
+4. Solana enforces that exact signed decision on-chain
+
+That `VRGDA + zkTLS + signed payload + on-chain proof consumption` composition is the main novelty of this repo.
+
+## Colosseum Reviewer Path
+
+Run:
 
 ```bash
 yarn install --frozen-lockfile
@@ -36,13 +93,57 @@ yarn run dev
 
 Then open:
 
-- `http://localhost:3000/lab`
-- `http://localhost:3000/fan-pass`
-- `http://localhost:3000/api/lab/shadow/records?limit=20`
+- `http://localhost:3000/demo/guarded-claim`
+
+What to look for:
+
+1. Connect wallet
+2. Wait for quote readiness
+3. Execute claim
+4. Observe signed payload flow and transaction success
+5. Open Solana Explorer proof on devnet
+
+If you want the exact recording flow, use `docs/v2/DEMO_RUNBOOK.md`.
+
+## Technical Demo
+
+The primary demo is `Guarded Claim`.
+
+User path:
+
+1. wallet connects
+2. app requests Shield quote
+3. oracle returns `payload_hex`, `oracle_signature_hex`, `oracle_pubkey`
+4. client builds `Ed25519Program` verify + `execute_shield`
+5. program re-verifies the payload and consumes the proof tuple once
+6. transaction lands on devnet and can be inspected in Explorer
+
+The demo page is:
+
+- `http://localhost:3000/demo/guarded-claim`
+
+## Verified Devnet State
+
+Re-verified on `2026-03-23`:
+
+- Program ID: `5VqDVHqeCJW1cWZgydjJLG68ShDGVZ45k6cE7hUY9uMW`
+- Upgrade authority: `EhTPPwYGDW1KEn1jepHArxGzvVtfo5KBEBfBEFc66gBo`
+- `global_config_v2`: `Qfv2aF3NpH3mhJ6x47TxHgtYPo62e3GuEDR8KQbf8fu`
+- `admin_config_v2`: `BbgU3AzJhDPBbckByFL5JjfPNw391aAYxPDfEBGsRQWo`
+- `initializeV2` tx: `5z4B2Zm1LjSiUMwTdvykMegB4sksqZx3fnqSQ6rzKqodAQhKFPLCBBSYET4NNiXPo4zQSBJcp578JakLsiFLgFSV`
+- `initializeAdminConfig` tx: `4PNaXCeoUg1LZux42dvyKGQBgPnjmfhdhq8geX23iumNtpBPgseuQ1KfnaVjo2xUniwHDFoELRBhEiukrfiTzK2c`
+
+Quick checks:
+
+```bash
+solana program show 5VqDVHqeCJW1cWZgydjJLG68ShDGVZ45k6cE7hUY9uMW --url devnet
+solana account Qfv2aF3NpH3mhJ6x47TxHgtYPo62e3GuEDR8KQbf8fu --url devnet
+solana account BbgU3AzJhDPBbckByFL5JjfPNw391aAYxPDfEBGsRQWo --url devnet
+```
+
+Full notes: `docs/v2/DEPLOYMENT_STATE.md`
 
 ## Devnet Deploy
-
-Use Solana `devnet` for app deployment and wallet airdrops. The repo now includes a single-path deploy flow for `unforgiven_v2`.
 
 ```bash
 cp .env.example .env.local
@@ -50,90 +151,51 @@ cp .env.example .env.local
 npm run deploy:devnet:v2
 ```
 
-What it does:
+This flow:
 
 - builds `unforgiven_v2`
-- deploys it to devnet with the current Solana wallet
-- syncs `NEXT_PUBLIC_PROGRAM_ID` and devnet RPC settings into `.env.local`
+- deploys to Solana devnet
+- syncs program id and RPC settings into `.env.local`
 - initializes `global_config_v2` and `admin_config_v2`
 
-## Verified Devnet State (2026-03-23)
+## Evidence
 
-The current public devnet deployment has been re-verified against chain state on **2026-03-23**.
-
-- **Program ID:** `5VqDVHqeCJW1cWZgydjJLG68ShDGVZ45k6cE7hUY9uMW`
-- **Upgrade authority:** `EhTPPwYGDW1KEn1jepHArxGzvVtfo5KBEBfBEFc66gBo`
-- **global_config_v2:** `Qfv2aF3NpH3mhJ6x47TxHgtYPo62e3GuEDR8KQbf8fu`
-- **admin_config_v2:** `BbgU3AzJhDPBbckByFL5JjfPNw391aAYxPDfEBGsRQWo`
-- **initializeV2 tx:** `5z4B2Zm1LjSiUMwTdvykMegB4sksqZx3fnqSQ6rzKqodAQhKFPLCBBSYET4NNiXPo4zQSBJcp578JakLsiFLgFSV`
-- **initializeAdminConfig tx:** `4PNaXCeoUg1LZux42dvyKGQBgPnjmfhdhq8geX23iumNtpBPgseuQ1KfnaVjo2xUniwHDFoELRBhEiukrfiTzK2c`
-
-Quick re-check commands:
-
-```bash
-solana program show 5VqDVHqeCJW1cWZgydjJLG68ShDGVZ45k6cE7hUY9uMW --url devnet
-solana account Qfv2aF3NpH3mhJ6x47TxHgtYPo62e3GuEDR8KQbf8fu --url devnet
-solana account BbgU3AzJhDPBbckByFL5JjfPNw391aAYxPDfEBGsRQWo --url devnet
-solana confirm -v 5z4B2Zm1LjSiUMwTdvykMegB4sksqZx3fnqSQ6rzKqodAQhKFPLCBBSYET4NNiXPo4zQSBJcp578JakLsiFLgFSV --url devnet
-solana confirm -v 4PNaXCeoUg1LZux42dvyKGQBgPnjmfhdhq8geX23iumNtpBPgseuQ1KfnaVjo2xUniwHDFoELRBhEiukrfiTzK2c --url devnet
-```
-
-Full deployment notes live in `docs/v2/DEPLOYMENT_STATE.md`.
-
-## Evidence Path (Optional, 3-5 minutes)
-
-If you want deeper technical proof quickly:
+Recommended validation commands:
 
 ```bash
 yarn run test:shield:hardening
+yarn run test:client:v2
 yarn run test:hub
 yarn run test:plugin:ticket
-SHIELD_API_BASE=http://127.0.0.1:3100 yarn run smoke:plugin:ticket:v2
+yarn run test:program:negative:v2
 ```
 
-## Core Flow
+These cover:
 
-1. User action enters an app or plugin flow such as `buy`, `claim`, or `unlock`.
-2. The app requests a Shield quote and receives `payload_hex`, `oracle_signature_hex`, and `oracle_pubkey`.
-3. The client builds a two-instruction Solana transaction: `Ed25519 verify` plus `preview/execute`.
-4. The on-chain program verifies the signed payload, applies fairness policy, and emits events for monitoring and governance.
+- oracle hardening / fail-closed behavior
+- v2 client and payload alignment
+- hub integration path
+- plugin contract behavior
+- negative execution-path checks in the program
 
-## Technical Demo Flow (Guarded Claim)
+## Repo Map
 
-The **Colosseum technical demo** uses a single path: **Guarded Claim** — Connect wallet → Shield quote → signed payload → Claim → Ed25519 verify + execute_shield → devnet tx → Explorer proof.
-
-- **Demo page:** `http://localhost:3000/demo/guarded-claim`
-- **Page states:** Recording status (Ready to record / Blocked / Quote unavailable / Local validator mode), Quote status, Execution status, Claim button, Transaction signature, Explorer link (devnet) or “Local validator run” (local).
-- **Flow:** Connect wallet → wait until **Recording status** is “Ready to record (devnet)” or “Local validator mode (ready)” → click **Claim** → approve in wallet → see Transaction signature and **View on Solana Explorer** (or local run message).
-- **Docs:** `docs/v2/DEMO_RUNBOOK.md` (runbook), `docs/v2/TECHNICAL_DEMO_SCRIPT.md` (2–3 min script).
-
-**Env:** `NEXT_PUBLIC_PROGRAM_ID`, `NEXT_PUBLIC_SOLANA_CLUSTER=devnet`, and `ORACLE_KEYPAIR_PATH` or `ORACLE_PRIVATE_KEY` in `.env.local`. Chain must be initialized (see runbook). **Local validator fallback:** if devnet is down, use local validator and set `NEXT_PUBLIC_DEMO_EXPLORER_LINK=0`; page will show “Local validator run” and runbook describes the steps.
-
-## Integration Contract
-
-Standard Shield response fields:
-
-- `payload_hex`
-- `oracle_signature_hex`
-- `oracle_pubkey`
-
-Plugin decision contract and semantics:
-
-- `docs/v2/PLUGIN_CONTRACT_V1.md`
-- `examples/anti-bot-ticket-plugin/index.js`
-
-## Repository Map
-
-- v2 on-chain program: `programs/unforgiven_v2`
-- Shield oracle: `services/shield-oracle`
-- Fan-pass hub decision layer: `services/fan-pass-hub`
-- Behavior lab engine: `services/behavior-lab-engine`
-- Sentinel: `crates/sentinel`
-- v2 docs: `docs/v2`
-- lab docs: `docs/lab`
-
-## Docs
-
-- v2 docs index: `docs/v2/README.md`
+- on-chain program: `programs/unforgiven_v2`
+- oracle / quote issuance: `services/shield-oracle`
+- v2 client helpers: `lib/unforgiven-v2-client.ts`
+- guarded claim demo: `app/demo/guarded-claim/page.tsx`
+- demo runbook: `docs/v2/DEMO_RUNBOOK.md`
 - execution flow: `docs/v2/EXECUTION_FLOW.md`
-- ops runbook: `docs/v2/OPS_RUNBOOK.md`
+- architecture notes: `docs/v2/ARCHITECTURE.md`
+
+## Additional Surfaces
+
+The repository also contains optional modules beyond the main Colosseum path:
+
+- `/fan-pass` for integrator-facing decision flow experiments
+- `/lab` for shadow-mode behavioral scenarios and telemetry
+- ticket receipt / listing primitives in `unforgiven_v2` for post-primary lifecycle experiments
+
+These are secondary to the main claim:
+
+`UNFORGIVEN v2 demonstrates that VRGDA + zkTLS can be composed into a verifiable, replay-resistant, on-chain fairness execution path on Solana.`
